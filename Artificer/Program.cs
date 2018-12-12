@@ -4,8 +4,13 @@ using System.Net;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Security.Cryptography;
 
 using Newtonsoft.Json;
+using SteamDatabase.ValvePak;
+using ValveResourceFormat;
+using ValveResourceFormat.ResourceTypes;
+using SkiaSharp;
 
 namespace Artificer
 {
@@ -29,37 +34,31 @@ namespace Artificer
 				{
 					switch (command)
 					{
-						//case "manifest":
-						//	cardCache = DownloadCardDefinitions(config.ManifestDownloadURL, config.CardCacheLocation);
-						//	break;
 
 						case "valve":
 							ValveData = DownloadValveDefinitions(config.ValveAPIBaseURL, config.ValveCacheLocation);
 							break;
 
-						case "convert":
-							cardCache = LoadCache(config.CardCacheLocation, config.ManifestDownloadURL);
-							//sets = ParseCardData(cardCache);
-							ValveData = DownloadValveDefinitions(config.ValveAPIBaseURL, config.ValveCacheLocation);
-							//ConvertData(ValveData, sets, config.CardCacheLocation, cardCache);
-							break;
-
-						case "save_images":
+						case "save":
 							if(ValveData == null)
 							{
 								ValveData = DownloadValveDefinitions(config.ValveAPIBaseURL, config.ValveCacheLocation);
 							}
 
-							DownloadCardImages(ValveData, config.ImagesLocation);
+							DownloadCardImages(ValveData, config.APIImagesLocation);
 
 							break;
 
-						case "load":
-							if(String.IsNullOrEmpty(cardCache))
-							{
-								cardCache = LoadCache(config.CardCacheLocation, config.ManifestDownloadURL);
-							}
-							//sets = ParseCardData(cardCache);
+						case "clear":
+
+							break;
+
+						case "game":
+
+							break;
+
+						case "extract":
+							ExtractRawCardImages(config.ArtifactBaseDir, config.GameImagesLocation, config.GameImageFormat);
 							break;
 
 						case "exit":
@@ -75,10 +74,11 @@ namespace Artificer
 					}
 
 					Console.WriteLine("\n\n\nPlease enter one of the following options:\n\n");
-					Console.WriteLine("manifest - retrieve card definitions from the configured URL and refresh the card cache.");
-					Console.WriteLine("valve - retrieve partial card definitions from the official Valve API.");
-					Console.WriteLine("save_images - retrieve card images from the official Valve API.");
-					Console.WriteLine("load - load card data into memory from the card cache.  If the cache is missing, this will download card data from the configured URL.");
+					Console.WriteLine("valve - retrieve complete card definitions from the official Valve API.");
+					Console.WriteLine("save - retrieve card images from the official Valve API that are not cached.");
+					Console.WriteLine("clear - delete all cached card images.");
+					Console.WriteLine("game - load card info from the game data at the configured Artifact game path.");
+					Console.WriteLine("extract - extract card images from the game data at the configured Artifact game path.");
 					Console.WriteLine("exit - exit\n");
 					command = Console.ReadLine().ToLower();
 				}
@@ -94,6 +94,7 @@ namespace Artificer
 
 		public static Config LoadConfig(string configLocation)
 		{
+			configLocation = Path.GetFullPath(configLocation);
 			Config config = null;
 			Console.WriteLine($"Loading config from {configLocation}...");
 			if (File.Exists(configLocation))
@@ -112,69 +113,88 @@ namespace Artificer
 			return config;
 		}
 
-		//public static void ConvertData(ValveAPIResponseCollection ValveSets, List<ArtifactSet> GithubSets, string cacheLocation, string cache)
-		//{
-		//	Dictionary<int, int> IDMapping = new Dictionary<int, int>();
-		//	List<string> blacklist = new List<string>()
-		//	{
-		//		"Melee Creep Dire",
-		//		"Melee Creep Radiant"
-		//	};
-		//	foreach(var set in GithubSets)
-		//	{
-		//		foreach(var card in set.Cards)
-		//		{
-		//			if (blacklist.Contains(card.Name))
-		//			{
-		//				card.Id = 99999999;
-		//				IDMapping[card.Id] = -1;
-		//				continue;
-		//			}
-
-		//			var realcard = ValveSets.Responses.Select(x => x.Value.SetDefinition.card_list.Where(y => y.card_name["english"].Equals(card.Name) && y.card_type != "Ability" && y.card_type != "Passive Ability").FirstOrDefault()).Where(z => z != null).FirstOrDefault();
-		//			var firstSet = ValveSets.Responses[1].SetDefinition.card_list;
-		//			//var z = firstSet.Where(x => x.card_name["english"].Equals(card.Name));
-		//			if(realcard == null)
-		//			{
-
-		//			}
-		//			IDMapping[card.Id] = realcard.card_id;
-		//		}
-		//	}
-
-		//	foreach(var pair in IDMapping)
-		//	{
-		//		string regex = $@"""Id"": {pair.Key},";
-		//		cache = Regex.Replace(cache, regex, $@"""Id"": {pair.Value},");
-
-		//		regex = $@"(""RelatedIds"": \[\n +){pair.Key}\n";
-		//		cache = Regex.Replace(cache, regex, $"${{1}}{pair.Value}\n");
-		//	}
-
-		//	JsonSerializerSettings settings = new JsonSerializerSettings()
-		//	{
-		//		DefaultValueHandling = DefaultValueHandling.Ignore,
-		//		Formatting = Formatting.Indented
-		//	};
-
-		//	File.WriteAllText(cacheLocation + "_test.json", cache);
-		//	File.WriteAllText(cacheLocation + "_map.json", JsonConvert.SerializeObject(IDMapping, settings));
-		//}
-
-		public static string DownloadCardDefinitions(string URL, string cacheLocation)
+		public static void ExtractRawCardImages(string ArtifactDir, string destDir, string formatName)
 		{
-			Console.Clear();
-			Console.WriteLine($"Pulling card data from {URL}...");
-
-			using (WebClient client = new WebClient())
+			string pakname = "game/dcg/pak01_dir.vpk";
+			string pakloc = Path.Combine(ArtifactDir, pakname);
+			SKEncodedImageFormat format = SKEncodedImageFormat.Png;
+			int quality = 100;
+			if(formatName.ToLower() == "jpg" || formatName.ToLower() == "jpeg")
 			{
-				string result = client.DownloadString(URL);
-				Console.WriteLine($"Successfully pulled from external source.  Saving card data to {cacheLocation}...");
-				File.WriteAllText(cacheLocation, result);
-				Console.WriteLine("Done.");
+				format = SKEncodedImageFormat.Jpeg;
+				quality = 85;
+			}
 
-				return result;
-			}		
+
+
+			if (!File.Exists(pakloc))
+			{
+				Console.WriteLine($"File is missing from the expected location of {pakloc}!  Please check that the Artifact installation directory has been correctly configured.");
+				return;
+			}
+
+			using (var package = new Package())
+			{
+				package.Read(pakloc);
+				Console.WriteLine($"{pakname} loaded successfully.");
+				Console.WriteLine($"{pakname} contains {package.Entries.Count} different file types.");
+
+				Dictionary<string, byte[]> images = new Dictionary<string, byte[]>();
+
+				foreach(var image in package.Entries["vtex_c"])
+				{
+					if (!image.ToString().StartsWith("panorama/images/card_art"))
+						continue;
+
+					package.ReadEntry(image, out byte[] entry);
+					string name = $"{image.DirectoryName}/{image.FileName}.{image.TypeName}";
+					Console.WriteLine($"Extracting {name}...");
+					images[name] = entry;
+				}
+
+				Console.WriteLine("\nAll files extracted from VPK.");
+
+				foreach(var pair in images)
+				{
+					string filename = pair.Key.Replace("vtex_c", formatName);
+
+					var resource = new Resource();
+					resource.Read(new MemoryStream(pair.Value));
+
+					var bitmap = ((Texture)resource.Blocks[BlockType.DATA]).GenerateBitmap();
+					var image = SKImage.FromBitmap(bitmap);
+
+					string fullFilename = Path.Combine(destDir, filename);
+					if(!Directory.Exists(Path.GetDirectoryName(fullFilename)))
+					{
+						Directory.CreateDirectory(Path.GetDirectoryName(fullFilename));
+					}
+
+					string combined = Path.Combine(destDir, filename);
+
+					Console.WriteLine($"Writing image to file: {combined}...");
+
+					using (FileStream fs = File.Create(combined))
+					{
+						using (var imageData = image.Encode(format, quality))
+						{
+							if (imageData == null)
+							{
+								Console.WriteLine($"Warning! {filename} could not be encoded to {formatName}.  Skipping.");
+								File.WriteAllText(combined + ".txt", $"Failed to encode to {formatName}!");
+							}
+							else
+							{
+								imageData.SaveTo(fs);
+							}
+						}
+					}
+				}
+
+				Console.WriteLine($"\nAll files converted to {formatName}.");
+
+			}
+
 		}
 
 		public static void DownloadCardImages(ValveAPIResponseCollection sets, string imageLocation)
@@ -232,8 +252,6 @@ namespace Artificer
 							Console.WriteLine("\tDone.");
 						}
 					}
-
-
 
 					foreach (var language in card.ingame_image.Keys)
 					{
@@ -373,23 +391,13 @@ namespace Artificer
 			else
 			{
 				Console.WriteLine($"Cache not found.  Retrieving data from {URL} and saving to {cacheLocation}...");
-				cache = DownloadCardDefinitions(URL, cacheLocation);
-				File.WriteAllText(cacheLocation, cache);
+				//cache = DownloadCardDefinitions(URL, cacheLocation);
+				//File.WriteAllText(cacheLocation, cache);
 				Console.WriteLine("Done.");
 			}
 
 			return cache;
 		}
 
-		//public static List<ArtifactSet> ParseCardData(string cardData)
-		//{
-		//	Console.WriteLine("Parsing card cache...");
-
-		//	var sets = JsonConvert.DeserializeObject<ArtifactSetCollection>(cardData);
-
-		//	Console.WriteLine("Done.");
-
-		//	return sets.Sets;
-		//}
 	}
 }

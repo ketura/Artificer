@@ -28,23 +28,25 @@ namespace Artificer
 	public class Config
 	{
 		public string CardCacheLocation { get; set; }
-		public string ManifestDownloadURL { get; set; }
 		public string ValveAPIBaseURL { get; set; }
 		public string ValveCacheLocation { get; set; }
-		public string ImagesLocation { get; set; }
-		public string ArtifactInstallationLocation { get; set; }
+		public string APIImagesLocation { get; set; }
+		public string ArtifactBaseDir { get; set; }
+		public string GameImagesLocation { get; set; }
+		public string GameImageFormat { get; set; }
 
 		public static Config GetDefaultConfig()
 		{
 			return new Config()
 			{
 				CardCacheLocation = "./CardCache.json",
-				//https://raw.githubusercontent.com/ottah/ArtifactDB/master/cards-manifest.json
-				ManifestDownloadURL = "https://raw.githubusercontent.com/ketura/ArtifactDB/master/cards-manifest.json",
 				ValveAPIBaseURL = "https://playartifact.com/cardset/",
-				ArtifactInstallationLocation = "",
 				ValveCacheLocation = "./ ValveAPIResponses.json",
-				ImagesLocation = "./ CardImages"
+				APIImagesLocation = "./ CardImages",
+				ArtifactBaseDir = "C:/Program Files/Steam/steamapps/common/Artifact",
+				GameImagesLocation = "./RawCardImages",
+				GameImageFormat = "png"
+
 			};
 		}
 	}

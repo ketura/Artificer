@@ -1,8 +1,9 @@
 ﻿{
   "CardCacheLocation": "./CardCache.json",
-  "ManifestDownloadURL": "https://raw.githubusercontent.com/ketura/ArtifactDB/master/cards-manifest.json",
-  "CardDownloadURL2": "https://raw.githubusercontent.com/ottah/ArtifactDB/master/cards-manifest.json",
   "ValveAPIBaseURL": "https://playartifact.com/cardset/",
   "ValveCacheLocation": "./ValveAPIResponses.json",
-  "ImagesLocation" :  "./CardImages"
+  "APIImagesLocation": "./CardImages",
+  "ArtifactBaseDir": "X:/Games/SteamLibrary/steamapps/common/Artifact/",
+  "GameImagesLocation": "./RawCardImages",
+  "GameImageFormat":  "jpg"
 }

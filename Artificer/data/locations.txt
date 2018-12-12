@@ -1,6 +1,7 @@
-\steamapps\common\Artifact\game\dcg\panorama\localization\dcg_glossary_english.txt
-\steamapps\common\Artifact\game\dcg\panorama\localization\dcg_lore_set_00_english.txt
-\steamapps\common\Artifact\game\dcg\panorama\localization\dcg_lore_set_01_english.txt
-\steamapps\common\Artifact\game\dcg\panorama\localization\dcg_vo_set_01_english.txt
-\steamapps\common\Artifact\game\dcg\resource\card_set_00_english.txt
-\steamapps\common\Artifact\game\dcg\resource\card_set_01_english.txt
+/steamapps/common/Artifact/game/dcg/panorama/localization/dcg_glossary_english.txt
+/steamapps/common/Artifact/game/dcg/panorama/localization/dcg_lore_set_00_english.txt
+/steamapps/common/Artifact/game/dcg/panorama/localization/dcg_lore_set_01_english.txt
+/steamapps/common/Artifact/game/dcg/panorama/localization/dcg_vo_set_01_english.txt
+/steamapps/common/Artifact/game/dcg/resource/card_set_00_english.txt
+/steamapps/common/Artifact/game/dcg/resource/card_set_01_english.txt
+/steamapps/common/Artifact/game/dcg/pak01_dir.vpk
