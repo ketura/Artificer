@@ -53,7 +53,7 @@ namespace Artificer
 
 							break;
 
-						case "game":
+						case "merge":
 
 							break;
 
@@ -76,9 +76,12 @@ namespace Artificer
 					Console.WriteLine("\n\n\nPlease enter one of the following options:\n\n");
 					Console.WriteLine("valve - retrieve complete card definitions from the official Valve API.");
 					Console.WriteLine("save - retrieve card images from the official Valve API that are not cached.");
-					Console.WriteLine("clear - delete all cached card images.");
-					Console.WriteLine("game - load card info from the game data at the configured Artifact game path.");
-					Console.WriteLine("extract - extract card images from the game data at the configured Artifact game path.");
+					Console.WriteLine("clear - delete all cached card API images.");
+					Console.WriteLine("merge - combine card info from the game data at the configured Artifact game path with official API data.");
+					Console.WriteLine("extract - [WARNING: MEMORY HEAVY] extract card images from the game data at the configured Artifact game path.");
+					Console.WriteLine("upload - push all extracted game images and cached API card images to the configured wiki.");
+					Console.WriteLine("backup - download all existing wiki card articles prior to overwriting them.");
+					Console.WriteLine("update - edit or create all card articles with the latest and greatest card info.");
 					Console.WriteLine("exit - exit\n");
 					command = Console.ReadLine().ToLower();
 				}

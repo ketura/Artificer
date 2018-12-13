@@ -5,5 +5,5 @@
   "APIImagesLocation": "./CardImages",
   "ArtifactBaseDir": "X:/Games/SteamLibrary/steamapps/common/Artifact/",
   "GameImagesLocation": "./RawCardImages",
-  "GameImageFormat":  "jpg"
+  "GameImageFormat":  "png"
 }
