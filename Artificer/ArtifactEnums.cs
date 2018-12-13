@@ -26,8 +26,8 @@ using System.Text;
 namespace Artificer
 {
 	public enum ArtifactCardType { Hero, Creep, Improvement, Spell, Item, Stronghold, Pathing}
-	public enum ArtifactItemType { Consumable, Weapon, Armor, Accessory }
-	public enum ArtifactColor { Black, Blue, Green, Red, Yellow, None }
+	public enum ArtifactSubType { Consumable, Weapon, Armor, Accessory }
+	public enum ArtifactColor { None, Black, Blue, Green, Red }
 	public enum ArtifactRarity { Basic, Common, Uncommon, Rare }
 	public enum ArtifactAbilityType { Active, Continuous, Play, Death, Reactive }
 }

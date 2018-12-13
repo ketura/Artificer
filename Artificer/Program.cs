@@ -22,9 +22,11 @@ namespace Artificer
 			Config config = LoadConfig(configLocation);
 
 			string cardCache = "";
-			List<WikiSet> sets = null;
-			List<WikiCard> cards = null;
+			Dictionary<int, WikiSet> Sets = null;
+			Dictionary<int, WikiCard> Cards = null;
 			ValveAPIResponseCollection ValveData = null;
+			CardTextCollection GameFileInfo = null;
+			Dictionary<string, int> VOMapping = null;
 
 			try
 			{
@@ -37,6 +39,10 @@ namespace Artificer
 
 						case "valve":
 							ValveData = DownloadValveDefinitions(config.ValveAPIBaseURL, config.ValveCacheLocation);
+							if(Sets == null || Cards == null)
+							{
+								(Sets, Cards) = ConvertValveCardsToWikiCards(ValveData);
+							}
 							break;
 
 						case "save":
@@ -51,6 +57,20 @@ namespace Artificer
 
 						case "clear":
 
+							break;
+
+						case "load":
+							
+							if (ValveData == null)
+							{
+								ValveData = DownloadValveDefinitions(config.ValveAPIBaseURL, config.ValveCacheLocation);
+							}
+							if (Sets == null || Cards == null)
+							{
+								(Sets, Cards) = ConvertValveCardsToWikiCards(ValveData);
+							}
+							VOMapping = MapCardIDsToVONames(config.ArtifactBaseDir, Sets.Keys.ToList());
+							ExtractGameData(config.ArtifactBaseDir, Sets.Keys.ToList(), VOMapping);
 							break;
 
 						case "merge":
@@ -77,6 +97,7 @@ namespace Artificer
 					Console.WriteLine("valve - retrieve complete card definitions from the official Valve API.");
 					Console.WriteLine("save - retrieve card images from the official Valve API that are not cached.");
 					Console.WriteLine("clear - delete all cached card API images.");
+					Console.WriteLine("load - read card/lore/voiceover data from game files at the configured Artifact game path.");
 					Console.WriteLine("merge - combine card info from the game data at the configured Artifact game path with official API data.");
 					Console.WriteLine("extract - [WARNING: MEMORY HEAVY] extract card images from the game data at the configured Artifact game path.");
 					Console.WriteLine("upload - push all extracted game images and cached API card images to the configured wiki.");
@@ -114,6 +135,141 @@ namespace Artificer
 			}
 
 			return config;
+		}
+
+		public static Dictionary<string, int> MapCardIDsToVONames(string ArtifactDir, List<int> sets)
+		{
+			string pakname = "game/dcg/pak01_dir.vpk";
+			string pakloc = Path.Combine(ArtifactDir, pakname);
+			Dictionary<string, int> nameMap = new Dictionary<string, int>();
+
+			if (!File.Exists(pakloc))
+			{
+				Console.WriteLine($"File is missing from the expected location of {pakloc}!  Please check that the Artifact installation directory has been correctly configured.");
+				return null;
+			}
+
+			using (var package = new Package())
+			{
+				package.Read(pakloc);
+				Console.WriteLine($"{pakname} loaded successfully.");
+				Console.WriteLine($"{pakname} contains {package.Entries.Count} different file types.");
+
+				Dictionary<string, string> files = new Dictionary<string, string>();
+
+				foreach (var textFile in package.Entries["txt"])
+				{
+					if (!textFile.ToString().StartsWith("scripts/talker/set_"))
+						continue;
+
+					package.ReadEntry(textFile, out byte[] entry);
+					string name = $"{textFile.DirectoryName}/{textFile.FileName}.{textFile.TypeName}";
+					Console.WriteLine($"Extracting {name}...");
+					files[name] = System.Text.Encoding.Default.GetString(entry);
+				}
+
+				Console.WriteLine("\nAll files extracted from VPK.");
+
+				foreach (var pair in files)
+				{
+					Match match = Regex.Match(pair.Key, @"(\w+)\.txt");
+					string name = match.Groups[1].Value;
+					match = Regex.Match(pair.Value, @"Whitelist Card (\d+)");
+					int id = Int32.Parse(match.Groups[1].Value);
+
+					nameMap[name] = id;
+				}
+
+			}
+
+			return nameMap;
+		}
+
+		public static (Dictionary<int, WikiSet> Sets, Dictionary<int, WikiCard> Cards) ConvertValveCardsToWikiCards(ValveAPIResponseCollection api)
+		{
+			var sets = new Dictionary<int, WikiSet>();
+			var cards = new Dictionary<int, WikiCard>();
+			foreach (var pair in api.Responses)
+			{
+				sets[pair.Key] = new WikiSet(pair.Value.SetDefinition);
+				foreach (var card in pair.Value.SetDefinition.card_list)
+				{
+					cards[card.card_id] = new WikiCard(card);
+				}
+			}
+
+			return (sets, cards);
+		}
+
+		public static CardTextCollection ExtractGameData(string ArtifactDir, List<int> sets, Dictionary<string, int> VOMapping)
+		{
+			List<string> LoreFilenames = new List<string>();
+			List<string> VOFilenames = new List<string>();
+			List<string> CardFilenames = new List<string>();
+
+			foreach(int set in sets)
+			{
+				string setNum = set.ToString("00");
+				LoreFilenames.Add(Path.Combine(ArtifactDir, $"game/dcg/panorama/localization/dcg_lore_set_{setNum}_english.txt"));
+				CardFilenames.Add(Path.Combine(ArtifactDir, $"game/dcg/resource/card_set_{setNum}_english.txt"));
+
+				if(set != 0)
+				{
+					VOFilenames.Add(Path.Combine(ArtifactDir, $"game/dcg/panorama/localization/dcg_vo_set_{setNum}_english.txt"));
+				}
+			}
+
+			CardTextCollection collection = new CardTextCollection();
+
+			foreach (string filename in LoreFilenames)
+			{
+				if (File.Exists(filename))
+				{
+					Console.WriteLine($"Loading {filename}...");
+					string text = File.ReadAllText(filename);
+					Console.WriteLine("Loading complete.  Parsing...");
+					collection.ParseLoreSet(text);
+					Console.WriteLine("Done.");
+				}
+				else
+				{
+					Console.WriteLine($"Filename {filename} doesn't exist!");
+				}
+			}
+
+			foreach (string filename in VOFilenames)
+			{
+				if (File.Exists(filename))
+				{
+					Console.WriteLine($"Loading {filename}...");
+					string text = File.ReadAllText(filename);
+					Console.WriteLine("Loading complete.  Parsing...");
+					collection.ParseVOSet(text, VOMapping);
+					Console.WriteLine("Done.");
+				}
+				else
+				{
+					Console.WriteLine($"Filename {filename} doesn't exist!");
+				}
+			}
+
+			foreach (string filename in CardFilenames)
+			{
+				if (File.Exists(filename))
+				{
+					Console.WriteLine($"Loading {filename}...");
+					string text = File.ReadAllText(filename);
+					Console.WriteLine("Loading complete.  Parsing...");
+					collection.ParseCardSet(text);
+					Console.WriteLine("Done.");
+				}
+				else
+				{
+					Console.WriteLine($"Filename {filename} doesn't exist!");
+				}
+			}
+
+			return collection;
 		}
 
 		public static void ExtractRawCardImages(string ArtifactDir, string destDir, string formatName)

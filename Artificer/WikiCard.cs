@@ -28,79 +28,141 @@ using Newtonsoft.Json.Converters;
 
 namespace Artificer
 {
+	public class WikiSet
+	{
+		public string Name { get; set; }
+		public int ID { get; set; }
+		public string MarketOffset { get; set; }
+		public DateTime ReleaseDate { get; set; }
+
+		public WikiSet(ValveSet set)
+		{
+			Name = set.set_info.name["english"];
+			ID = set.set_info.set_id;
+			MarketOffset = set.set_info.pack_item_def.ToString();
+			ReleaseDate = new DateTime(2018, 11, 28);
+		}
+	}
+
 	public class WikiCard
 	{
-		// Id of the card used for matching it with signature/related cards. Currently the Id is just a random number as we don't know the card collection number.
-		public int Id { get; set; }
-
-		// IDs of related cards such as signature spells and tokens.
-		public List<string> RelatedCards { get; set; }
-
-		// Card name
+		public int ID { get; set; }
+		public int BaseID { get; set; }
+		public int MarketplaceID { get; set; }
 		public string Name { get; set; }
+		public int SetID { get; set; }
 
-		// Hero/Creep/Improvement/Spell/Item
 		[JsonConverter(typeof(StringEnumConverter))]
 		public ArtifactCardType CardType { get; set; }
-
-		// Consumable/Weapon/Armor/Accessory
 		[JsonConverter(typeof(StringEnumConverter))]
-		public ArtifactItemType ItemType { get; set; }
-
-		// Black/Blue/Green/Red/Yellow
-		[JsonConverter(typeof(StringEnumConverter))]
-		public ArtifactColor Color { get; set; }
-
-		// Basic/Common/Uncommon/Rare
+		public ArtifactSubType SubType { get; set; }
 		[JsonConverter(typeof(StringEnumConverter))]
 		public ArtifactRarity Rarity { get; set; }
+		[JsonConverter(typeof(StringEnumConverter))]
+		public ArtifactColor Color { get; set; }
+		
+		public bool IsToken { get; set; }
+		public bool IsCollectable { get; set; }
+		public bool HasPulse { get; set; }
 
-		//The raw card text e.g. Active 1: Do something.
 		public string Text { get; set; }
+		public string TextRaw { get; set; }
+		public string CardImage { get; set; }
+		public string CardImageRaw { get; set; }
+		public string CardIcon { get; set; }
+		public string CardIconRaw { get; set; }
 
-		// Attack
-		public int Attack { get; set; }
+		public string Illustrator { get; set; }
+		public string VoiceActor { get; set; }
+		public string Lore { get; set; }
+		public Dictionary<string, string> VoiceOverLines { get; set; }
+		public Dictionary<string, string> VoiceOverFiles { get; set; }
 
-		// Armor
-		public int Armor { get; set; }
+		public WikiCard()
+		{
+			VoiceOverLines = new Dictionary<string, string>();
+			VoiceOverFiles = new Dictionary<string, string>();
+		}
 
-		// Health
-		public int Health { get; set; }
+		public WikiCard(ValveCard card) : this()
+		{
 
-		// The name of the card that is this card's signature card.
-		public string SignatureCard { get; set; }
+		}
+	}
 
-		// If true this card is a signature card for a hero. Use the RelatedCards to get the hero.
-		public bool IsSignatureCard { get; set; }
-
-		// How many charges a card has for its effect.
+	public class WikiAbility
+	{
+		public int ID { get; set; }
+		// Name of the ability. For improvements/creeps the ability will be the name of the card + " : Effect" e.g. "Keenfolk Turret : Effect."
+		public string Name { get; set; }
+		public int CardID { get; set; }
+		[JsonConverter(typeof(StringEnumConverter))]
+		public ArtifactAbilityType AbilityType { get; set; }
 		public int Charges { get; set; }
 
-		// Cost of buying an item.
-		public int GoldCost { get; set; }
+		public WikiAbility(ValveCard card)
+		{
 
-		// An array of all abilities/effects for the Hero/Creep/Improvement/Item card. For creeps and improvements their Text has been parsed into an ability so it is easier to search for abilities.
-		public List<string> Abilities { get; set; }
+		}
+	}
 
-		// Mana cost for card.
+	public class WikiCreep
+	{
+		public int ID { get; set; }
+		public string Name { get; set; }
 		public int ManaCost { get; set; }
+		public int Attack { get; set; }
+		public int Armor { get; set; }
+		public int Health { get; set; }
+		public List<int> Abilities { get; set; }
 
-		// If true this card gives player initiative. If null/false it cannot.
-		public bool GetInitiative { get; set; }
+		public WikiCreep()
+		{
+			Abilities = new List<int>();
+		}
 
-		// If true this card can be cast across lanes. If null/false it cannot.
-		public bool CrossLane { get; set; }
+		public WikiCreep(ValveCard creep) : this()
+		{
+			
+		}
+	}
 
-		// If true this card is a token created by another card.
-		public bool Token { get; set; }
+	public class WikiHero
+	{
+		public int ID { get; set; }
+		public string Name { get; set; }
+		public int Attack { get; set; }
+		public int Armor { get; set; }
+		public int Health { get; set; }
+		public int SignatureCardID { get; set; }
+		public List<int> Abilities { get; set; }
+		public string HeroIcon { get; set; }
+		public string HeroIconRaw { get; set; }
 
-		// The name that assets files will use for this card. Just provide a path to what type of asset you want and the file extension.
-		public string FileName { get; set; }
+		public WikiHero()
+		{
+			Abilities = new List<int>();
+		}
 
-		// Artist name
-		public string Artist { get; set; }
+		public WikiHero(ValveCard hero) : this()
+		{
+			
+		}
+	}
 
-		// Lore description for the card.
-		public string Lore { get; set; }
+	public class WikiSpell
+	{
+		public int ID { get; set; }
+		public string Name { get; set; }
+		public int CardSpawned { get; set; }
+		public int ManaCost { get; set; }
+		public int Charges { get; set; }
+		public bool GrantsInitiative { get; set; }
+		public bool IsCrosslane { get; set; }
+
+		public WikiSpell(ValveCard spell)
+		{
+
+		}
 	}
 }
