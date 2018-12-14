@@ -69,12 +69,28 @@ namespace Artificer
 							{
 								(Sets, Cards) = ConvertValveCardsToWikiCards(ValveData);
 							}
-							VOMapping = MapCardIDsToVONames(config.ArtifactBaseDir, Sets.Keys.ToList());
-							ExtractGameData(config.ArtifactBaseDir, Sets.Keys.ToList(), VOMapping);
+							VOMapping = LoadVOMapping(config.VOMappingLocation);
+							GameFileInfo = ExtractGameData(config.ArtifactBaseDir, Sets.Keys.ToList(), VOMapping);
 							break;
 
 						case "merge":
-
+							if (ValveData == null)
+							{
+								ValveData = DownloadValveDefinitions(config.ValveAPIBaseURL, config.ValveCacheLocation);
+							}
+							if (Sets == null || Cards == null)
+							{
+								(Sets, Cards) = ConvertValveCardsToWikiCards(ValveData);
+							}
+							if(VOMapping == null)
+							{
+								VOMapping = LoadVOMapping(config.VOMappingLocation);
+							}
+							if(GameFileInfo == null)
+							{
+								GameFileInfo = ExtractGameData(config.ArtifactBaseDir, Sets.Keys.ToList(), VOMapping);
+							}
+							MergeAPIWithGameFiles(Sets, Cards, GameFileInfo);
 							break;
 
 						case "extract":
@@ -137,6 +153,26 @@ namespace Artificer
 			return config;
 		}
 
+		public static void MergeAPIWithGameFiles(Dictionary<int, WikiSet> Sets, Dictionary<int, WikiCard> Cards, CardTextCollection GameFileInfo)
+		{
+			foreach(var card in Cards.Values)
+			{
+				(var text, var lore, var voiceovers) = GameFileInfo.GetGameFileData(card.ID);
+				card.TextRaw = text?.RawText;
+				card.LoreRaw = lore?.RawText;
+				foreach(var vo in voiceovers)
+				{
+					card.VoiceOverLines[vo.ResponseTrigger] = vo.RawText;
+				}
+			}
+		}
+
+		public static Dictionary<string, int> LoadVOMapping(string VOMappingLocation)
+		{
+			return JsonConvert.DeserializeObject<Dictionary<string, int>>(File.ReadAllText(VOMappingLocation));
+		}
+
+		//Left here for future possible use when updating the VOMapping json
 		public static Dictionary<string, int> MapCardIDsToVONames(string ArtifactDir, List<int> sets)
 		{
 			string pakname = "game/dcg/pak01_dir.vpk";
@@ -191,10 +227,38 @@ namespace Artificer
 			var cards = new Dictionary<int, WikiCard>();
 			foreach (var pair in api.Responses)
 			{
-				sets[pair.Key] = new WikiSet(pair.Value.SetDefinition);
-				foreach (var card in pair.Value.SetDefinition.card_list)
+				var set = pair.Value.SetDefinition;
+				sets[pair.Key] = new WikiSet(set);
+				foreach (var card in set.card_list)
 				{
-					cards[card.card_id] = new WikiCard(card);
+					WikiCard newCard = null;
+					switch (card.card_type)
+					{
+						case ArtifactCardType.Hero:
+							newCard = WikiCard.ParseHero(set, card);
+							break;
+						case ArtifactCardType.Creep:
+							newCard = WikiCard.ParseCreep(set, card);
+							break;
+						case ArtifactCardType.Improvement:
+						case ArtifactCardType.Spell:
+							newCard = WikiCard.ParseSpell(set, card);
+							break;
+						case ArtifactCardType.Item:
+							newCard = WikiCard.ParseItem(set, card);
+							break;
+						case ArtifactCardType.Ability:
+						case ArtifactCardType.PassiveAbility:
+							newCard = WikiCard.ParseAbility(set, card);
+							break;
+						case ArtifactCardType.Stronghold:
+						case ArtifactCardType.Pathing:
+						default:
+							newCard = WikiCard.ParseCard(set, card);
+							break;
+					}
+
+					cards[card.card_id] = newCard;
 				}
 			}
 
@@ -373,7 +437,7 @@ namespace Artificer
 					{
 						string langDir = Path.Combine(imageLocation, "cards", language);
 						Directory.CreateDirectory(langDir);
-						string cardFilename = Path.Combine(langDir, $"Artifact_card_{set}_{ScrubString(card.card_name["english"])}_{card.card_id}_{language}.png");
+						string cardFilename = Path.Combine(langDir, $"Artifact_card_{set}_{WikiCard.ScrubString(card.card_name["english"])}_{card.card_id}_{language}.png");
 
 						Console.WriteLine($"Working on {cardFilename}...");
 
@@ -395,7 +459,7 @@ namespace Artificer
 					{
 						string langDir = Path.Combine(imageLocation, "icons", language);
 						Directory.CreateDirectory(langDir);
-						string abilityFileName = Path.Combine(langDir, $"Artifact_icon_{set}_{ScrubString(card.card_name["english"])}_{card.card_id}_{language}.png");
+						string abilityFileName = Path.Combine(langDir, $"Artifact_icon_{set}_{WikiCard.ScrubString(card.card_name["english"])}_{card.card_id}_{language}.png");
 
 						Console.WriteLine($"Working on {abilityFileName}...");
 
@@ -416,7 +480,7 @@ namespace Artificer
 					{
 						string langDir = Path.Combine(imageLocation, "hero_icons", language);
 						Directory.CreateDirectory(langDir);
-						string ingameFileName = Path.Combine(langDir, $"Artifact_heroicon_{set}_{ScrubString(card.card_name["english"])}_{card.card_id}_{language}.png");
+						string ingameFileName = Path.Combine(langDir, $"Artifact_heroicon_{set}_{WikiCard.ScrubString(card.card_name["english"])}_{card.card_id}_{language}.png");
 
 						Console.WriteLine($"Working on {ingameFileName}...");
 
@@ -437,10 +501,7 @@ namespace Artificer
 			}
 		}
 
-		private static string ScrubString(string str)
-		{
-			return Regex.Replace(str, @"[^\w]+", "_");
-		}
+		
 
 		public static ValveAPIResponseCollection DownloadValveDefinitions(string URL, string cacheLocation)
 		{

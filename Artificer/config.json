@@ -5,5 +5,6 @@
   "APIImagesLocation": "./CardImages",
   "ArtifactBaseDir": "X:/Games/SteamLibrary/steamapps/common/Artifact/",
   "GameImagesLocation": "./RawCardImages",
-  "GameImageFormat":  "png"
+  "GameImageFormat": "png",
+  "VOMappingLocation":  "./data/VoiceoverMapping.json"
 }

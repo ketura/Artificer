@@ -124,9 +124,10 @@ namespace Artificer
 	{
 		public int base_card_id { get; set; }
 		public int card_id { get; set; }
-		//[JsonConverter(typeof(StringEnumConverter))]
-		public string card_type { get; set; }
-		public string sub_type { get; set; }
+		[JsonConverter(typeof(StringEnumConverter))]
+		public ArtifactCardType card_type { get; set; }
+		[JsonConverter(typeof(StringEnumConverter))]
+		public ArtifactSubType sub_type { get; set; }
 		public bool is_black { get; set; }
 		public bool is_blue { get; set; }
 		public bool is_green { get; set; }
@@ -171,7 +172,8 @@ namespace Artificer
 	{
 		public int card_id { get; set; }
 		public int count { get; set; }
-		public string ref_type { get; set; }
+		[JsonConverter(typeof(StringEnumConverter))]
+		public ArtifactReferenceType ref_type { get; set; }
 	}
 
 

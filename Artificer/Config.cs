@@ -34,6 +34,7 @@ namespace Artificer
 		public string ArtifactBaseDir { get; set; }
 		public string GameImagesLocation { get; set; }
 		public string GameImageFormat { get; set; }
+		public string VOMappingLocation { get; set; }
 
 		public static Config GetDefaultConfig()
 		{
@@ -45,7 +46,8 @@ namespace Artificer
 				APIImagesLocation = "./ CardImages",
 				ArtifactBaseDir = "C:/Program Files/Steam/steamapps/common/Artifact",
 				GameImagesLocation = "./RawCardImages",
-				GameImageFormat = "png"
+				GameImageFormat = "png",
+				VOMappingLocation = "./ data / VoiceoverMapping.json"
 
 			};
 		}

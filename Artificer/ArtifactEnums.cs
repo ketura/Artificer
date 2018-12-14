@@ -21,13 +21,48 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 using System.Text;
 
 namespace Artificer
 {
-	public enum ArtifactCardType { Hero, Creep, Improvement, Spell, Item, Stronghold, Pathing}
-	public enum ArtifactSubType { Consumable, Weapon, Armor, Accessory }
+	public enum ArtifactCardType
+	{
+		Hero,
+		Creep,
+		Improvement,
+		Spell,
+		Item,
+		Stronghold,
+		Pathing,
+		Ability,
+		[EnumMember(Value = "Passive Ability")]
+		PassiveAbility
+	}
+
+	public enum ArtifactSubType { None, Consumable, Weapon, Armor, Accessory, Deed }
 	public enum ArtifactColor { None, Black, Blue, Green, Red }
-	public enum ArtifactRarity { Basic, Common, Uncommon, Rare }
-	public enum ArtifactAbilityType { Active, Continuous, Play, Death, Reactive }
+	public enum ArtifactRarity
+	{
+		[EnumMember(Value = "")]
+		Basic,
+		Common,
+		Uncommon,
+		Rare
+	}
+	public enum ArtifactAbilityType { None, Active, Continuous, Play, Death, Reactive }
+
+	public enum ArtifactReferenceType
+	{
+		[EnumMember(Value = "includes")]
+		Includes,
+		[EnumMember(Value = "references")]
+		References,
+		[EnumMember(Value = "passive_ability")]
+		PassiveAbility,
+		[EnumMember(Value = "active_ability")]
+		ActiveAbility,
+		Signature
+	}
+
 }

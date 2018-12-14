@@ -31,13 +31,15 @@ namespace Artificer
 	{
 		public Dictionary<int, CardText> Text { get; set; }
 		public Dictionary<int, CardLore> Lore { get; set; }
-		public Dictionary<int, Dictionary<string, CardVoiceOver>> Voiceover { get; set; }
+		public Dictionary<int, List<CardVoiceOver>> Voiceover { get; set; }
+		public Dictionary<int, string> SimpleMapping { get; set; }
 
 		public CardTextCollection()
 		{
 			Text = new Dictionary<int, CardText>();
 			Lore = new Dictionary<int, CardLore>();
-			Voiceover = new Dictionary<int, Dictionary<string, CardVoiceOver>>();
+			Voiceover = new Dictionary<int, List<CardVoiceOver>>();
+			SimpleMapping = new Dictionary<int, string>();
 		}
 
 		public void ParseCardSet(string text)
@@ -151,16 +153,16 @@ namespace Artificer
 
 				if(!Voiceover.ContainsKey(id))
 				{
-					Voiceover[id] = new Dictionary<string, CardVoiceOver>();
+					Voiceover[id] = new List<CardVoiceOver>();
 				}
 
-				Voiceover[id][vo.Name] = vo;
+				Voiceover[id].Add(vo);
 			}
 		}
 
-		public (CardText, CardLore, CardVoiceOver) GetGameFileData(int id, string voName)
+		public (CardText, CardLore, List<CardVoiceOver>) GetGameFileData(int id)
 		{
-			return (null, null, null);
+			return (Text.GetValueOrDefault(id), Lore.GetValueOrDefault(id), Voiceover.GetValueOrDefault(id, new List<CardVoiceOver>()));
 		}
 	}
 
