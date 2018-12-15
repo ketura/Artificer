@@ -37,7 +37,7 @@ namespace Artificer
 					switch (command)
 					{
 
-						case "valve":
+						case "api":
 							ValveData = DownloadValveDefinitions(config.ValveAPIBaseURL, config.ValveCacheLocation);
 							if(Sets == null || Cards == null)
 							{
@@ -45,21 +45,36 @@ namespace Artificer
 							}
 							break;
 
-						case "save":
+						case "download":
 							if(ValveData == null)
 							{
 								ValveData = DownloadValveDefinitions(config.ValveAPIBaseURL, config.ValveCacheLocation);
 							}
 
-							DownloadCardImages(ValveData, config.APIImagesLocation);
+							DownloadCardImages(ValveData, config.APIImagesLocation, config.APILanguage);
 
 							break;
 
 						case "clear":
-
+							if(Directory.Exists(config.APIImagesLocation))
+							{
+								Console.WriteLine($"Deleting {config.APIImagesLocation}...");
+								Directory.Delete(config.APIImagesLocation, true);
+							}
+							if (Directory.Exists(config.GameImagesLocation))
+							{
+								Console.WriteLine($"Deleting {config.GameImagesLocation}...");
+								Directory.Delete(config.GameImagesLocation, true);
+							}
+							if (Directory.Exists(config.GameAudioLocation))
+							{
+								Console.WriteLine($"Deleting {config.GameAudioLocation}...");
+								Directory.Delete(config.GameAudioLocation, true);
+							}
+							Console.WriteLine("Done.");
 							break;
 
-						case "load":
+						case "parse":
 							
 							if (ValveData == null)
 							{
@@ -93,9 +108,15 @@ namespace Artificer
 							MergeAPIWithGameFiles(Sets, Cards, GameFileInfo);
 							break;
 
-						case "extract":
-							ExtractRawCardImages(config.ArtifactBaseDir, config.GameImagesLocation, config.GameImageFormat);
+						case "extract_art":
+							ExtractRawCardImages(config.ArtifactBaseDir, config.GameImagesLocation);
 							break;
+
+						case "extract_audio":
+							ExtractVoiceoverAudio(config.ArtifactBaseDir, config.GameAudioLocation);
+							break;
+
+							
 
 						case "exit":
 							exit = true;
@@ -110,16 +131,20 @@ namespace Artificer
 					}
 
 					Console.WriteLine("\n\n\nPlease enter one of the following options:\n\n");
-					Console.WriteLine("valve - retrieve complete card definitions from the official Valve API.");
-					Console.WriteLine("save - retrieve card images from the official Valve API that are not cached.");
-					Console.WriteLine("clear - delete all cached card API images.");
-					Console.WriteLine("load - read card/lore/voiceover data from game files at the configured Artifact game path.");
-					Console.WriteLine("merge - combine card info from the game data at the configured Artifact game path with official API data.");
-					Console.WriteLine("extract - [WARNING: MEMORY HEAVY] extract card images from the game data at the configured Artifact game path.");
-					Console.WriteLine("upload - push all extracted game images and cached API card images to the configured wiki.");
-					Console.WriteLine("backup - download all existing wiki card articles prior to overwriting them.");
-					Console.WriteLine("update - edit or create all card articles with the latest and greatest card info.");
-					Console.WriteLine("exit - exit\n");
+					Console.WriteLine("  extract_art - [WARNING: MEMORY HEAVY] extract card background art from the configured Artifact game path.");
+					Console.WriteLine("  extract_audio - [WARNING: MEMORY HEAVY] extract VO / music audio from the configured Artifact game path.");
+					Console.WriteLine(" ");
+					Console.WriteLine("  api - retrieve / update complete card definitions from the official Valve API.");
+					Console.WriteLine("  download - retrieve card images from the official Valve API.");
+					Console.WriteLine("  clear - delete all extracted art/audio and downloaded card art.");
+					Console.WriteLine("  parse - read card/lore/voiceover data from game files at the configured Artifact game path.");
+					Console.WriteLine("  merge - combine card info from the game data at the configured Artifact game path with official API data.");
+					Console.WriteLine(" ");
+					Console.WriteLine("  upload - push all extracted game images and cached API card images to the configured wiki.");
+					Console.WriteLine("  backup - download all existing wiki card articles prior to overwriting them.");
+					Console.WriteLine("  update - edit or create all card articles with the latest and greatest card info.");
+					Console.WriteLine(" ");
+					Console.WriteLine(" exit - exit\n");
 					command = Console.ReadLine().ToLower();
 				}
 			}
@@ -336,18 +361,84 @@ namespace Artificer
 			return collection;
 		}
 
-		public static void ExtractRawCardImages(string ArtifactDir, string destDir, string formatName)
+		public static void ExtractVoiceoverAudio(string ArtifactDir, string destDir)
 		{
 			string pakname = "game/dcg/pak01_dir.vpk";
 			string pakloc = Path.Combine(ArtifactDir, pakname);
-			SKEncodedImageFormat format = SKEncodedImageFormat.Png;
-			int quality = 100;
-			if(formatName.ToLower() == "jpg" || formatName.ToLower() == "jpeg")
+
+			if (!File.Exists(pakloc))
 			{
-				format = SKEncodedImageFormat.Jpeg;
-				quality = 85;
+				Console.WriteLine($"File is missing from the expected location of {pakloc}!  Please check that the Artifact installation directory has been correctly configured.");
+				return;
 			}
 
+			using (var package = new Package())
+			{
+				package.Read(pakloc);
+				Console.WriteLine($"{pakname} loaded successfully.");
+				Console.WriteLine($"{pakname} contains {package.Entries.Count} different file types.");
+
+				Dictionary<string, byte[]> images = new Dictionary<string, byte[]>();
+
+				foreach (var image in package.Entries["vsnd_c"])
+				{
+					if (!image.ToString().StartsWith("sounds/responses") && !image.ToString().StartsWith("sounds/music"))
+						continue;
+
+					package.ReadEntry(image, out byte[] entry);
+					string name = $"{image.DirectoryName}/{image.FileName}.{image.TypeName}";
+					Console.WriteLine($"Extracting {name}...");
+					images[name] = entry;
+				}
+
+				Console.WriteLine("\nAll files extracted from VPK.");
+
+				foreach (var pair in images)
+				{
+
+					string filename = Path.Combine(destDir, pair.Key.Replace("vsnd_c", "mp3"));
+
+					var resource = new Resource();
+					resource.Read(new MemoryStream(pair.Value));
+					var sound = ((Sound)resource.Blocks[BlockType.DATA]).GetSound();
+
+					if (!Directory.Exists(Path.GetDirectoryName(filename)))
+					{
+						Directory.CreateDirectory(Path.GetDirectoryName(filename));
+					}
+
+					//Writing MP3
+					if (File.Exists(filename))
+					{
+						Console.WriteLine($"\tSkipping {filename}; it already exists.");
+					}
+					else
+					{
+						Console.WriteLine($"Writing mp3 to file: {filename}...");
+
+						using (FileStream fs = File.Create(filename))
+						{
+							fs.Write(sound, 0, sound.Length);
+						}
+					}
+
+					
+				}
+
+				Console.WriteLine($"\nAll files extracted.");
+			}
+		}
+
+		public static void ExtractRawCardImages(string ArtifactDir, string destDir)
+		{
+			string pakname = "game/dcg/pak01_dir.vpk";
+			string pakloc = Path.Combine(ArtifactDir, pakname);
+			SKEncodedImageFormat pngFormat = SKEncodedImageFormat.Png;
+			SKEncodedImageFormat jpgFormat = SKEncodedImageFormat.Jpeg;
+			int jpgQuality = 85;
+
+			string pngDir = Path.Combine(destDir, "png");
+			string jpgDir = Path.Combine(destDir, "jpg");
 
 
 			if (!File.Exists(pakloc))
@@ -379,126 +470,334 @@ namespace Artificer
 
 				foreach(var pair in images)
 				{
-					string filename = pair.Key.Replace("vtex_c", formatName);
+					
+					string pngFilename = Path.Combine(pngDir, pair.Key.Replace("vtex_c", ".png"));
+					string jpgFilename = Path.Combine(jpgDir, pair.Key.Replace("vtex_c", ".jpg"));
 
 					var resource = new Resource();
 					resource.Read(new MemoryStream(pair.Value));
 
 					var bitmap = ((Texture)resource.Blocks[BlockType.DATA]).GenerateBitmap();
 					var image = SKImage.FromBitmap(bitmap);
+					Console.WriteLine("Checking for white border...");
+					image = CropBorder(image);
 
-					string fullFilename = Path.Combine(destDir, filename);
-					if(!Directory.Exists(Path.GetDirectoryName(fullFilename)))
+					if (!Directory.Exists(Path.GetDirectoryName(pngFilename)))
 					{
-						Directory.CreateDirectory(Path.GetDirectoryName(fullFilename));
+						Directory.CreateDirectory(Path.GetDirectoryName(pngFilename));
+					}
+					if (!Directory.Exists(Path.GetDirectoryName(jpgFilename)))
+					{
+						Directory.CreateDirectory(Path.GetDirectoryName(jpgFilename));
 					}
 
-					string combined = Path.Combine(destDir, filename);
-
-					Console.WriteLine($"Writing image to file: {combined}...");
-
-					using (FileStream fs = File.Create(combined))
+					//Writing PNG
+					if (File.Exists(pngFilename))
 					{
-						using (var imageData = image.Encode(format, quality))
+						Console.WriteLine($"\tSkipping {pngFilename}; it already exists.");
+					}
+					else
+					{
+						Console.WriteLine($"Writing image to file: {pngFilename}...");
+
+						using (FileStream fs = File.Create(pngFilename))
 						{
-							if (imageData == null)
+							using (var imageData = image.Encode(pngFormat, 100))
 							{
-								Console.WriteLine($"Warning! {filename} could not be encoded to {formatName}.  Skipping.");
-								File.WriteAllText(combined + ".txt", $"Failed to encode to {formatName}!");
+								if (imageData == null)
+								{
+									Console.WriteLine($"Warning! {pngFilename} could not be encoded to {pngFilename}.  Skipping.");
+									File.WriteAllText(pngFilename + ".txt", $"Failed to encode to {pngFilename}!");
+								}
+								else
+								{
+									imageData.SaveTo(fs);
+								}
 							}
-							else
+						}
+					}
+
+					//Writing JPG
+					if (File.Exists(jpgFilename))
+					{
+						Console.WriteLine($"\tSkipping {jpgFilename}; it already exists.");
+					}
+					else
+					{
+						Console.WriteLine($"Writing image to file: {jpgFilename}...");
+
+						using (FileStream fs = File.Create(jpgFilename))
+						{
+							using (var imageData = image.Encode(jpgFormat, jpgQuality))
 							{
-								imageData.SaveTo(fs);
+								if (imageData == null)
+								{
+									Console.WriteLine($"Warning! {jpgFilename} could not be encoded to {jpgFilename}.  Skipping.");
+									File.WriteAllText(jpgFilename + ".txt", $"Failed to encode to {jpgFilename}!");
+								}
+								else
+								{
+									imageData.SaveTo(fs);
+								}
 							}
 						}
 					}
 				}
 
-				Console.WriteLine($"\nAll files converted to {formatName}.");
-
+				Console.WriteLine($"\nAll files extracted.");
 			}
+		}
+
+		private static SKImage CropBorder(SKImage original)
+		{
+			var bitmap = SKBitmap.FromImage(original);
+			int sampleCount = 4;
+
+			int top = 0;
+			int bottom = bitmap.Height;
+			int left = 0;
+			int right = bitmap.Width;
+
+			int increment = (bitmap.Width - 1) / sampleCount;
+			int x = 0;
+			int y = 0;
+			SKColor pureWhite = new SKColor(255,255,255,255);
+
+			//top border
+			y = 0;
+			do
+			{
+				for (x = 0; x < sampleCount; x++)
+				{
+					SKColor pixel = bitmap.GetPixel(x, y);
+					if (pixel != pureWhite)
+					{
+						//Console.WriteLine($"Found end of blank top margin at [{x}, {y}].");
+						break;
+					}
+				}
+				if (x < sampleCount)
+				{
+					top = y;
+					break;
+				}
+				else
+				{
+					y++;
+				}
+			} while (y < bitmap.Height / 3);
+
+
+			//bottom border
+			y = bottom - 1;
+			do
+			{
+				for (x = 0; x < sampleCount; x++)
+				{
+					SKColor pixel = bitmap.GetPixel(x, y);
+					if (pixel != pureWhite)
+					{
+						//Console.WriteLine($"Found end of blank bottom margin at [{x}, {y}].");
+						break;
+					}
+				}
+				if (x < sampleCount)
+				{
+					bottom = y - 1;
+					break;
+				}
+				else
+				{
+					y--;
+				}
+			} while (y > bitmap.Height * 0.66);
+
+
+			//left border
+			x = 0;
+			do
+			{
+				for (y = 0; y < sampleCount; y++)
+				{
+					SKColor pixel = bitmap.GetPixel(x, y);
+					if (pixel != pureWhite)
+					{
+						//Console.WriteLine($"Found end of blank top margin at [{x}, {y}].");
+						break;
+					}
+				}
+				if (y < sampleCount)
+				{
+					left = x;
+					break;
+				}
+				else
+				{
+					x++;
+				}
+			} while (x < bitmap.Width / 3);
+
+
+			//right border
+			x = right - 1;
+			do
+			{
+				for (y = 0; y < sampleCount; y++)
+				{
+					SKColor pixel = bitmap.GetPixel(x, y);
+					if (pixel != pureWhite)
+					{
+						//Console.WriteLine($"Found end of blank bottom margin at [{x}, {y}].");
+						break;
+					}
+				}
+				if (y < sampleCount)
+				{
+					right = x - 1;
+					break;
+				}
+				else
+				{
+					x--;
+				}
+			} while (x > bitmap.Width * 0.66);
+
+			return original.Subset(new SKRectI(left, top, right, bottom));
 
 		}
 
-		public static void DownloadCardImages(ValveAPIResponseCollection sets, string imageLocation)
+		public static void DownloadCardImages(ValveAPIResponseCollection sets, string imageLocation, string language)
 		{
-			if(!Directory.Exists(imageLocation))
+			if(language.ToLower() == "english")
+			{
+				language = "default";
+			}
+
+			string pngCardDir = Path.Combine(imageLocation, "png", "cards", language);
+			string jpgCardDir = Path.Combine(imageLocation, "jpg", "cards", language);
+			string pngIconDir = Path.Combine(imageLocation, "png", "icons", language);
+			string jpgIconDir = Path.Combine(imageLocation, "jpg", "icons", language);
+			string pngHeroDir = Path.Combine(imageLocation, "png", "hero_icons", language);
+			string jpgHeroDir = Path.Combine(imageLocation, "jpg", "hero_icons", language);
+			Directory.CreateDirectory(pngCardDir);
+			Directory.CreateDirectory(jpgCardDir);
+			Directory.CreateDirectory(pngIconDir);
+			Directory.CreateDirectory(jpgIconDir);
+			Directory.CreateDirectory(pngHeroDir);
+			Directory.CreateDirectory(jpgHeroDir);
+
+			if (!Directory.Exists(imageLocation))
 			{
 				Directory.CreateDirectory(imageLocation);
 			}
 
-			foreach(var pair in sets.Responses)
+			foreach (var pair in sets.Responses)
 			{
 				string set = pair.Key.ToString("00");
 
-				foreach(var card in pair.Value.SetDefinition.card_list)
+				foreach (var card in pair.Value.SetDefinition.card_list)
 				{
-					foreach (var language in card.large_image.Keys)
+					if (!card.large_image.Keys.Contains(language))
 					{
-						string langDir = Path.Combine(imageLocation, "cards", language);
-						Directory.CreateDirectory(langDir);
-						string cardFilename = Path.Combine(langDir, $"Artifact_card_{set}_{WikiCard.ScrubString(card.card_name["english"])}_{card.card_id}_{language}.png");
-
-						Console.WriteLine($"Working on {cardFilename}...");
-
-						if (File.Exists(cardFilename))
-						{
-							Console.WriteLine("\tSkipped.");
-							continue;
-						}
-
-						using (WebClient client = new WebClient())
-						{
-							client.DownloadFile(card.large_image[language], cardFilename);
-							Console.WriteLine("\tDone.");
-						}
+						Console.WriteLine($"Configured language {language} not found!");
+						continue;
 					}
 
+					string scrubbedName = WikiCard.ScrubString(card.card_name["english"]);
 
-					foreach (var language in card.mini_image.Keys)
+					Console.WriteLine($"Working on {scrubbedName}...");
+
+
+					//Getting main card images
+					string pngCardFilename = Path.Combine(pngCardDir, $"{set}_{scrubbedName}_{card.card_id}_card_{language}.png");
+					string jpgCardFilename = Path.Combine(jpgCardDir, $"{set}_{scrubbedName}_{card.card_id}_card_{language}.jpg");
+					DownloadAndConvertCard(card.large_image[language], pngCardFilename, jpgCardFilename);
+
+					//Getting card icons
+					string pngAbilityFileName = Path.Combine(pngIconDir, $"{set}_{scrubbedName}_{card.card_id}_icon_{language}.png");
+					string jpgAbilityFileName = Path.Combine(jpgIconDir, $"{set}_{scrubbedName}_{card.card_id}_icon_{language}.jpg");
+					DownloadAndConvertCard(card.mini_image[language], pngAbilityFileName, jpgAbilityFileName);
+
+					//Getting hero icons
+					string pngIngameFileName = Path.Combine(pngHeroDir, $"{set}_{scrubbedName}_{card.card_id}_hero_{language}.png");
+					string jpgIngameFileName = Path.Combine(jpgHeroDir, $"{set}_{scrubbedName}_{card.card_id}_hero_{language}.jpg");
+					if(card.ingame_image.Count > 0)
 					{
-						string langDir = Path.Combine(imageLocation, "icons", language);
-						Directory.CreateDirectory(langDir);
-						string abilityFileName = Path.Combine(langDir, $"Artifact_icon_{set}_{WikiCard.ScrubString(card.card_name["english"])}_{card.card_id}_{language}.png");
-
-						Console.WriteLine($"Working on {abilityFileName}...");
-
-						if (File.Exists(abilityFileName))
-						{
-							Console.WriteLine("\tSkipped.");
-							continue;
-						}
-
-						using (WebClient client = new WebClient())
-						{
-							client.DownloadFile(card.mini_image[language], abilityFileName);
-							Console.WriteLine("\tDone.");
-						}
+						DownloadAndConvertCard(card.ingame_image[language], pngIngameFileName, jpgIngameFileName);
 					}
 
-					foreach (var language in card.ingame_image.Keys)
-					{
-						string langDir = Path.Combine(imageLocation, "hero_icons", language);
-						Directory.CreateDirectory(langDir);
-						string ingameFileName = Path.Combine(langDir, $"Artifact_heroicon_{set}_{WikiCard.ScrubString(card.card_name["english"])}_{card.card_id}_{language}.png");
-
-						Console.WriteLine($"Working on {ingameFileName}...");
-
-						if (File.Exists(ingameFileName))
-						{
-							Console.WriteLine("\tSkipped.");
-							continue;
-						}
-
-						using (WebClient client = new WebClient())
-						{
-							client.DownloadFile(card.ingame_image[language], ingameFileName);
-							Console.WriteLine("\tDone.");
-						}
-					}
+					Console.WriteLine("Done.");
 				}
 
 			}
+		}
+
+		private static void DownloadAndConvertCard(string cardURL, string pngFilename, string jpgFilename)
+		{
+			if (File.Exists(pngFilename))
+			{
+				Console.WriteLine($"\tSkipped download, png already exists.");
+			}
+			else
+			{
+				int MaxAttempts = 4;
+
+				for (int attempt = 1; attempt <= MaxAttempts; attempt++)
+				{
+					try
+					{
+						HttpWebRequest request = (HttpWebRequest)WebRequest.Create(cardURL);
+						request.Timeout = 10000;
+						request.ReadWriteTimeout = 10000;
+						var response = (HttpWebResponse)request.GetResponse();
+						using (var fs = File.OpenWrite(pngFilename))
+						{
+							response.GetResponseStream().CopyTo(fs);
+						}
+						Console.WriteLine($"Download complete.");
+					}
+					catch (WebException)
+					{
+						if (attempt == MaxAttempts)
+							throw;
+
+						Console.WriteLine("\nConnection Error.  Retrying...");
+					}
+				}
+			}
+
+			//convert downloaded png to jpg
+			if (File.Exists(jpgFilename))
+			{
+				Console.WriteLine($"\tSkipped conversion, jpg already exists.");
+			}
+			else
+			{
+				using (FileStream inputFS = File.OpenRead(pngFilename))
+				{
+					//byte[] bytes = inputFS.read
+					var bitmap = SKBitmap.Decode(inputFS);
+					SKImage image = SKImage.FromBitmap(bitmap);
+
+					using (FileStream outputFS = File.Create(jpgFilename))
+					{
+						using (var imageData = image.Encode(SKEncodedImageFormat.Jpeg, 85))
+						{
+							if (imageData == null)
+							{
+								Console.WriteLine($"Warning! {jpgFilename} could not be encoded to jpg.  Skipping.");
+								File.WriteAllText(jpgFilename + ".txt", $"Failed to encode to jpg!");
+							}
+							else
+							{
+								imageData.SaveTo(outputFS);
+							}
+						}
+					}
+				}
+				Console.WriteLine($"Conversion complete.");
+			}
+			
 		}
 
 		

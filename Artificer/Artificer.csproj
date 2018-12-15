@@ -10,7 +10,7 @@
     <PackageReference Include="ArtifactDeckSharp" Version="0.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
     <PackageReference Include="ValvePak" Version="0.4.0.11" />
-    <PackageReference Include="ValveResourceFormat" Version="0.0.11.553-AppVeyor" />
+    <PackageReference Include="ValveResourceFormat" Version="0.0.13.647" />
   </ItemGroup>
 
   <ItemGroup>

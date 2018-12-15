@@ -3,8 +3,9 @@
   "ValveAPIBaseURL": "https://playartifact.com/cardset/",
   "ValveCacheLocation": "./ValveAPIResponses.json",
   "APIImagesLocation": "./CardImages",
+  "APILanguage":  "default",
   "ArtifactBaseDir": "X:/Games/SteamLibrary/steamapps/common/Artifact/",
   "GameImagesLocation": "./RawCardImages",
-  "GameImageFormat": "png",
+  "GameAudioLocation":  "./GameAudio",
   "VOMappingLocation":  "./data/VoiceoverMapping.json"
 }

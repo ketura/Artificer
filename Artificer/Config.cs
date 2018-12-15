@@ -31,9 +31,10 @@ namespace Artificer
 		public string ValveAPIBaseURL { get; set; }
 		public string ValveCacheLocation { get; set; }
 		public string APIImagesLocation { get; set; }
+		public string APILanguage { get; set; }
 		public string ArtifactBaseDir { get; set; }
 		public string GameImagesLocation { get; set; }
-		public string GameImageFormat { get; set; }
+		public string GameAudioLocation { get; set; }
 		public string VOMappingLocation { get; set; }
 
 		public static Config GetDefaultConfig()
@@ -42,12 +43,13 @@ namespace Artificer
 			{
 				CardCacheLocation = "./CardCache.json",
 				ValveAPIBaseURL = "https://playartifact.com/cardset/",
-				ValveCacheLocation = "./ ValveAPIResponses.json",
-				APIImagesLocation = "./ CardImages",
+				ValveCacheLocation = "./ValveAPIResponses.json",
+				APIImagesLocation = "./CardImages",
+				APILanguage = "default",
 				ArtifactBaseDir = "C:/Program Files/Steam/steamapps/common/Artifact",
 				GameImagesLocation = "./RawCardImages",
-				GameImageFormat = "png",
-				VOMappingLocation = "./ data / VoiceoverMapping.json"
+				GameAudioLocation = "./GameAudio",
+				VOMappingLocation = "./data/VoiceoverMapping.json"
 
 			};
 		}
