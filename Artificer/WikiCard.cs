@@ -45,8 +45,28 @@ namespace Artificer
 		}
 	}
 
+	public class WikiCardReference
+	{
+		public int ID { get; set; }
+		public WikiCard Card { get; set; }
+		public int Count { get; set; }
+		public ArtifactReferenceType ReferenceType { get; set; }
+
+		public WikiCardReference(ValveCardReference refe)
+		{
+			ID = refe.card_id;
+			Count = refe.count;
+			ReferenceType = refe.ref_type;
+		}
+	}
+
 	public class WikiCard
 	{
+		public static List<int> NonCollectableIDs { get; } = new List<int>()
+		{
+
+		};
+
 		public int ID { get; set; }
 		public int BaseID { get; set; }
 		public int MarketplaceID { get; set; }
@@ -62,11 +82,15 @@ namespace Artificer
 		[JsonConverter(typeof(StringEnumConverter))]
 		public ArtifactColor Color { get; set; }
 		
-		public bool IsToken { get; set; }
+		public int? TokenOf { get; set; }
+		public WikiCard TokenParent { get; set; }
+		public int? SignatureOf { get; set; }
+		public WikiCard SignatureParent { get; set; }
 		public bool IsCollectable { get; set; }
-		public bool HasPulse { get; set; }
 
 		public string Text { get; set; }
+		public string TextAPI { get; set; }
+		public string TextFormatted { get; set; }
 		public string TextRaw { get; set; }
 		public string CardImage { get; set; }
 		public string CardImageRaw { get; set; }
@@ -79,14 +103,21 @@ namespace Artificer
 		public string LoreFormatted { get; set; }
 		public string LoreRaw { get; set; }
 		public Dictionary<string, string> VoiceOverLines { get; set; }
+		public Dictionary<string, string> VoiceOverLinesRaw { get; set; }
 		public Dictionary<string, string> VoiceOverFiles { get; set; }
+
+		public Dictionary<int, WikiCardReference> References { get; set; }
+		public Dictionary<ArtifactKeyword, string> Keywords { get; set; }
 
 		public WikiSubCard SubCard { get; set; }
 
 		public WikiCard()
 		{
 			VoiceOverLines = new Dictionary<string, string>();
+			VoiceOverLinesRaw = new Dictionary<string, string>();
 			VoiceOverFiles = new Dictionary<string, string>();
+			References = new Dictionary<int, WikiCardReference>();
+			Keywords = new Dictionary<ArtifactKeyword, string>();
 		}
 
 		public WikiCard(int setID, ValveCard card) : this()
@@ -111,15 +142,23 @@ namespace Artificer
 			else
 				Color = ArtifactColor.None;
 
-			IsToken = false;
-			IsCollectable = false;
-			HasPulse = false;
-			Text = card.card_text.GetValueOrDefault("english");
+			TokenOf = null;
+			SignatureOf = null;
+			//We manually set all signatures, tokens, and abilities to false
+			IsCollectable = true;
+
+			TextAPI = card.card_text.GetValueOrDefault("english");
 			CardImage = GetImageName(this, "card");
 			CardImageRaw = GetImageName(this, "cardraw");
 			CardIcon = GetImageName(this, "icon");
 			CardIconRaw = GetImageName(this, "iconraw");
 			Illustrator = card.illustrator;
+
+			foreach(var reference in card.references)
+			{
+				References[reference.card_id] = new WikiCardReference(reference);
+			}
+
 		}
 
 		public static string ScrubString(string str)
@@ -186,23 +225,46 @@ namespace Artificer
 	public abstract class WikiSubCard
 	{
 		public int ID { get; set; }
-		// Name of the ability. For improvements/creeps the ability will be the name of the card + " : Effect" e.g. "Keenfolk Turret : Effect."
+		// Name of the card or ability. For improvements/creeps the ability will be the name of the card + ":Effect" e.g. "Keenfolk Turret:Effect."
 		public string Name { get; set; }
+		public WikiSubCard(int id, string name)
+		{
+			ID = id;
+			Name = name;
+		}
 	}
 
 	public class WikiAbility : WikiSubCard
 	{
-		
-		public int CardID { get; set; }
+		//CardID in the db
+		public int ParentID { get; set; }
+		public WikiCard Parent { get; set; }
+		public int CardSpawnedID { get; set; }
+		public WikiCard CardSpawned { get; set; }
 		[JsonConverter(typeof(StringEnumConverter))]
 		public ArtifactAbilityType AbilityType { get; set; }
+		[JsonConverter(typeof(StringEnumConverter))]
+		public ArtifactPassiveAbilityType PassiveAbilityType { get; set; }
 		public int Charges { get; set; }
 
-		public WikiAbility(ValveCard card)
+		public WikiAbility(ValveCard card) : base(card.card_id, card.card_name["english"] + ":Effect")
 		{
-			CardID = card.card_id;
 			AbilityType = ArtifactAbilityType.None;
+			PassiveAbilityType = ArtifactPassiveAbilityType.None;
 			Charges = card.charges;
+		}
+
+		public WikiAbility(ValveCardReference card, string name) : base(card.card_id, name)
+		{
+			if (card.ref_type == ArtifactReferenceType.ActiveAbility)
+			{
+				AbilityType = ArtifactAbilityType.Active;
+			}
+			else
+			{
+				AbilityType = ArtifactAbilityType.Passive;
+				PassiveAbilityType = ArtifactPassiveAbilityType.None;
+			}
 		}
 	}
 
@@ -212,22 +274,19 @@ namespace Artificer
 		public int Attack { get; set; }
 		public int Armor { get; set; }
 		public int Health { get; set; }
-		public Dictionary<int, ArtifactReferenceType> Abilities { get; set; }
+		public Dictionary<int, WikiAbility> Abilities { get; set; }
 
-		public WikiCreep()
+		public WikiCreep(ValveCard creep) : base(creep.card_id, creep.card_name["english"])
 		{
-			Abilities = new Dictionary<int, ArtifactReferenceType>();
-		}
+			Abilities = new Dictionary<int, WikiAbility>();
 
-		public WikiCreep(ValveCard creep) : this()
-		{
 			ManaCost = creep.mana_cost;
 			Attack = creep.attack;
 			Armor = creep.armor;
 			Health = creep.hit_points;
 			foreach(var reference in creep.references)
 			{
-				Abilities[reference.card_id] = reference.ref_type;
+				Abilities[reference.card_id] = new WikiAbility(reference, null);
 			}
 		}
 	}
@@ -238,17 +297,14 @@ namespace Artificer
 		public int Armor { get; set; }
 		public int Health { get; set; }
 		public int SignatureCardID { get; set; }
-		public Dictionary<int, ArtifactReferenceType> Abilities { get; set; }
+		public Dictionary<int, WikiAbility> Abilities { get; set; }
 		public string HeroIcon { get; set; }
 		public string HeroIconRaw { get; set; }
 
-		public WikiHero()
+		public WikiHero(int setID, ValveCard hero) : base(hero.card_id, hero.card_name["english"])
 		{
-			Abilities = new Dictionary<int, ArtifactReferenceType>();
-		}
+			Abilities = new Dictionary<int, WikiAbility>();
 
-		public WikiHero(int setID, ValveCard hero) : this()
-		{
 			Attack = hero.attack;
 			Armor = hero.armor;
 			Health = hero.hit_points;
@@ -256,13 +312,13 @@ namespace Artificer
 			HeroIconRaw = WikiCard.GetImageName(setID, hero, "heroraw", extension: "png");
 			foreach (var reference in hero.references)
 			{
-				if (reference.count == 3)
+				if (reference.ref_type == ArtifactReferenceType.Signature)
 				{
 					SignatureCardID = reference.card_id;
 				}
 				else
 				{
-					Abilities[reference.card_id] = reference.ref_type;
+					Abilities[reference.card_id] = new WikiAbility(reference, null);
 				}
 			}
 
@@ -271,18 +327,18 @@ namespace Artificer
 
 	public class WikiSpell : WikiSubCard
 	{
-		public int CardSpawned { get; set; }
+		public int CardSpawnedID { get; set; }
+		public WikiCard CardSpawned { get; set; }
 		public int ManaCost { get; set; }
 		public int Charges { get; set; }
-		public bool GrantsInitiative { get; set; }
 		public bool IsCrosslane { get; set; }
 
-		public WikiSpell(ValveCard spell)
+		public WikiSpell(ValveCard spell) : base(spell.card_id, spell.card_name["english"])
 		{
-			CardSpawned = spell.references.Where(x => x.ref_type == ArtifactReferenceType.References).Select(x => x.card_id).FirstOrDefault();
+			CardSpawnedID = spell.references.Where(x => x.ref_type == ArtifactReferenceType.References).Select(x => x.card_id).FirstOrDefault();
+			CardSpawned = null;
 			ManaCost = spell.mana_cost;
 			Charges = spell.charges;
-			GrantsInitiative = false;
 			IsCrosslane = spell.is_crosslane;
 		}
 	}
@@ -290,22 +346,17 @@ namespace Artificer
 	public class WikiItem : WikiSubCard
 	{
 		public int GoldCost { get; set; }
-		public Dictionary<int, ArtifactReferenceType> Abilities { get; set; }
+		public Dictionary<int, WikiAbility> Abilities { get; set; }
 		public int Charges { get; set; }
-		public bool GrantsInitiative { get; set; }
-		public bool IsCrosslane { get; set; }
 
-		public WikiItem()
+		public WikiItem(ValveCard item) : base(item.card_id, item.card_name["english"])
 		{
-			Abilities = new Dictionary<int, ArtifactReferenceType>();
-		}
+			Abilities = new Dictionary<int, WikiAbility>();
 
-		public WikiItem(ValveCard item) :this()
-		{
 			GoldCost = item.gold_cost;
 			foreach (var reference in item.references)
 			{
-				Abilities[reference.card_id] = reference.ref_type;
+				Abilities[reference.card_id] = new WikiAbility(reference, null);
 			}
 		}
 	}

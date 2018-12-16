@@ -21,91 +21,35 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
 using System.Text;
+using System.Linq;
 
 namespace Artificer
 {
-	public enum ArtifactCardType
+	public interface ICardTransformer
 	{
-		Hero,
-		Creep,
-		Improvement,
-		Spell,
-		Item,
-		Stronghold,
-		Pathing,
-		Ability,
-		[EnumMember(Value = "Passive Ability")]
-		PassiveAbility
+		void Transform(WikiCard card);
 	}
 
-	public enum ArtifactSubType { None, Consumable, Weapon, Armor, Accessory, Deed }
-	public enum ArtifactColor { None, Black, Blue, Green, Red }
-	public enum ArtifactRarity
+	public interface ICardCollectionTransformer
 	{
-		[EnumMember(Value = "")]
-		Basic,
-		Common,
-		Uncommon,
-		Rare
-	}
-	public enum ArtifactAbilityType { None, Active, Passive }
-	public enum ArtifactPassiveAbilityType { None, Continuous, Play, Death, Reactive }
-
-	public enum ArtifactReferenceType
-	{
-		[EnumMember(Value = "includes")]
-		Signature,
-		[EnumMember(Value = "references")]
-		References,
-		[EnumMember(Value = "passive_ability")]
-		PassiveAbility,
-		[EnumMember(Value = "active_ability")]
-		ActiveAbility
+		void Transform(IDictionary<int, WikiCard> cards, WikiCard card);
 	}
 
-	public enum ArtifactKeyword
+	public abstract class CardCollectionTransformer : ICardCollectionTransformer, ICardTransformer
 	{
-		BeforeActionPhase,
-		AfterCombatPhase,
-		Fountain,
-		ModifyAlly,
-		ModifyEnemy,
-		AlliedNeighbors,
-		EnemyNeighbors,
-		Purge,
-		Taunt,
-		Disarm,
-		Stun,
-		Silence,
-		Lock,
-		Condemn,
-		Summon,
-		Mana,
-		Bounty,
-		Gold,
-		Siege,
-		Cleave,
-		Retaliate,
-		Attack,
-		Armor,
-		Health,
-		Regeneration,
-		DeathShield,
-		DamageImmunity,
-		Pierce,
-		PiercingDamage,
-		Damage,
-		Heal,
-		Soulbound,
-		LethalToCreep,
-		LethalToHero,
-		Hacks,
-		Reveal,
-		Pulse,
-		GainsInitiative,
-		RapidDeployment
-	}
+		public void Transform(IDictionary<int, WikiCard> cards, WikiCard card)
+		{
+			TransformSingle(card);
+			TransformChildren(cards, card);
+		}
 
+		public void Transform(WikiCard card)
+		{
+			TransformSingle(card);
+		}
+
+		protected abstract void TransformSingle(WikiCard card);
+		protected abstract void TransformChildren(IDictionary<int, WikiCard> cards, WikiCard card);
+	}	
 }

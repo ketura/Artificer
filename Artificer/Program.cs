@@ -187,9 +187,12 @@ namespace Artificer
 				card.LoreRaw = lore?.RawText;
 				foreach(var vo in voiceovers)
 				{
-					card.VoiceOverLines[vo.ResponseTrigger] = vo.RawText;
+					card.VoiceOverLinesRaw[vo.ResponseTrigger] = vo.RawText;
 				}
 			}
+
+			var gauntlet = TransformerGauntlet.GenerateGauntlet();
+			gauntlet.Execute(Cards);
 		}
 
 		public static Dictionary<string, int> LoadVOMapping(string VOMappingLocation)
