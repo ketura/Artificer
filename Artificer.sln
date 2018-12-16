@@ -5,8 +5,6 @@ VisualStudioVersion = 15.0.28010.2048
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Artificer", "Artificer\Artificer.csproj", "{F9FA9229-D91D-4E12-AAD1-D4B398B2E878}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetWikiBot", "DotNetWikiBot\DotNetWikiBot.csproj", "{7A0A9476-A48F-4F34-8430-50F33A000E02}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,10 +15,6 @@ Global
 		{F9FA9229-D91D-4E12-AAD1-D4B398B2E878}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F9FA9229-D91D-4E12-AAD1-D4B398B2E878}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F9FA9229-D91D-4E12-AAD1-D4B398B2E878}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7A0A9476-A48F-4F34-8430-50F33A000E02}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7A0A9476-A48F-4F34-8430-50F33A000E02}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7A0A9476-A48F-4F34-8430-50F33A000E02}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7A0A9476-A48F-4F34-8430-50F33A000E02}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

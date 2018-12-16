@@ -36,6 +36,9 @@ namespace Artificer
 		public string GameImagesLocation { get; set; }
 		public string GameAudioLocation { get; set; }
 		public string VOMappingLocation { get; set; }
+		public string WikiURL { get; set; }
+		public string WikiUsername { get; set; }
+		public string WikiPassword { get; set; }
 
 		public static Config GetDefaultConfig()
 		{

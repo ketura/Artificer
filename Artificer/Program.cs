@@ -116,7 +116,26 @@ namespace Artificer
 							ExtractVoiceoverAudio(config.ArtifactBaseDir, config.GameAudioLocation);
 							break;
 
-							
+						case "upload":
+							if (ValveData == null)
+							{
+								ValveData = DownloadValveDefinitions(config.ValveAPIBaseURL, config.ValveCacheLocation);
+							}
+							if (Sets == null || Cards == null)
+							{
+								(Sets, Cards) = ConvertValveCardsToWikiCards(ValveData);
+							}
+							if (VOMapping == null)
+							{
+								VOMapping = LoadVOMapping(config.VOMappingLocation);
+							}
+							if (GameFileInfo == null)
+							{
+								GameFileInfo = ExtractGameData(config.ArtifactBaseDir, Sets.Keys.ToList(), VOMapping);
+							}
+							MergeAPIWithGameFiles(Sets, Cards, GameFileInfo);
+							MassUploadImageFilesToWiki(Cards, config.GameImagesLocation, config.APIImagesLocation, config.WikiURL, config.WikiUsername, config.WikiPassword);
+							break;
 
 						case "exit":
 							exit = true;
@@ -176,6 +195,36 @@ namespace Artificer
 			}
 
 			return config;
+		}
+
+		public static void MassUploadImageFilesToWiki(Dictionary<int, WikiCard> Cards, string GameImageLocation, string APIImageLocation, string wikiurl, string wikiuser, string wikipass)
+		{
+			ArtifactWikiBot bot = new ArtifactWikiBot(wikiurl, wikiuser, wikipass);
+			bot.Initialize();
+			foreach(var card in Cards.Values)
+			{
+				//Main Card Image
+				bot.UploadFile(Path.Combine(APIImageLocation, "jpg/cards/default/", card.CardImage), card.CardImage);
+				//Card Icon
+				bot.UploadFile(Path.Combine(APIImageLocation, "jpg/icons/default/", card.CardIcon), card.CardIcon);
+				//Raw Background Image
+				bot.UploadFile(Path.Combine(GameImageLocation, $"jpg/panorama/images/card_art/set{card.SetID.ToString("00")}/full_art", $"{card.ID}_psd.jpg"), card.CardImageRaw);
+				//Unfiltered Card Icon
+				bot.UploadFile(Path.Combine(GameImageLocation, $"jpg/panorama/images/card_art/set{card.SetID.ToString("00")}/mini_icons", $"{card.ID}_psd.jpg"), card.CardIconRaw);
+
+				if(card.CardType == ArtifactCardType.Hero)
+				{
+					var hero = card.SubCard as WikiHero;
+					//API Hero Icon
+					bot.UploadFile(Path.Combine(APIImageLocation, "png/hero_icons/default/", hero.HeroIcon), hero.HeroIcon);
+					//Raw Pixel Art Hero Icon
+					bot.UploadFile(Path.Combine(GameImageLocation, $"png/panorama/images/card_art/set{card.SetID.ToString("00")}/hero_icons", $"{card.ID}_png.png"), hero.HeroIconRaw);
+				}
+				
+			}
+
+
+			bot.End();
 		}
 
 		public static void MergeAPIWithGameFiles(Dictionary<int, WikiSet> Sets, Dictionary<int, WikiCard> Cards, CardTextCollection GameFileInfo)
@@ -474,8 +523,8 @@ namespace Artificer
 				foreach(var pair in images)
 				{
 					
-					string pngFilename = Path.Combine(pngDir, pair.Key.Replace("vtex_c", ".png"));
-					string jpgFilename = Path.Combine(jpgDir, pair.Key.Replace("vtex_c", ".jpg"));
+					string pngFilename = Path.Combine(pngDir, pair.Key.Replace("vtex_c", "png"));
+					string jpgFilename = Path.Combine(jpgDir, pair.Key.Replace("vtex_c", "jpg"));
 
 					var resource = new Resource();
 					resource.Read(new MemoryStream(pair.Value));
