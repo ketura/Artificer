@@ -30,6 +30,7 @@ using WikiClientLibrary.Pages;
 using WikiClientLibrary;
 using System.IO;
 using WikiClientLibrary.Files;
+using System.Linq;
 
 namespace Artificer
 {
@@ -63,6 +64,32 @@ namespace Artificer
 		public void UploadFile(string filename, string localName)
 		{
 			UploadFileAsync(filename, localName).Wait();
+		}
+
+		public IEnumerable<WikiPage> DownloadArticles(IEnumerable<string> titles)
+		{
+			List<List<string>> batches = new List<List<string>>();
+			int batchCount = titles.Count() / 50;
+			if(titles.Count() % 50 != 0)
+			{
+				batchCount++;
+			}
+			for(int i = 1; i <= batchCount; i++)
+			{
+				int start = (i - 1) * 50;
+				batches.Add(new List<string>(titles.Skip(start).Take(50)));
+			}
+
+			List<WikiPage> result = new List<WikiPage>();
+
+			foreach(var batch in batches)
+			{
+				var task = GetPagesAsync(batch);
+				task.Wait();
+				result.AddRange(task.Result);
+			}
+
+			return result;			
 		}
 
 		private async Task ConnectAsync()
@@ -102,8 +129,24 @@ namespace Artificer
 			Client.Dispose();        // Or you may use `using` statement.
 		}
 
+
+
+		private async Task<IEnumerable<WikiPage>> GetPagesAsync(IEnumerable<string> titles)
+		{
+			if (Client == null)
+				throw new InvalidOperationException("Wiki client has not been initialized!  Call Initialize() first.");
+
+			var pages = titles.Select(title => new WikiPage(Site, title)).ToArray();
+
+			await pages.RefreshAsync(PageQueryOptions.FetchContent | PageQueryOptions.ResolveRedirects);
+			return pages;
+		}
+
 		private async Task UploadFileAsync(string filename, string localName)
 		{
+			if (Client == null)
+				throw new InvalidOperationException("Wiki client has not been initialized!  Call Initialize() first.");
+
 			if(!File.Exists(filename))
 			{
 				Console.WriteLine($"{filename} does not exist!  Cannot upload.");

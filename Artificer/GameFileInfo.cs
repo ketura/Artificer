@@ -90,7 +90,6 @@ namespace Artificer
 
 					default:
 						throw new FormatException($"Unrecognized card tag \"{match.Groups[1].Value}\"! Please inform the maintainer to maintain his shit.");
-						break;
 				}
 
 			}

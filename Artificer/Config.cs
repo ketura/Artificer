@@ -19,8 +19,10 @@
 ///////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////
 
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace Artificer
@@ -39,6 +41,7 @@ namespace Artificer
 		public string WikiURL { get; set; }
 		public string WikiUsername { get; set; }
 		public string WikiPassword { get; set; }
+		public string ArticleLocation { get; set; }
 
 		public static Config GetDefaultConfig()
 		{
@@ -52,9 +55,30 @@ namespace Artificer
 				ArtifactBaseDir = "C:/Program Files/Steam/steamapps/common/Artifact",
 				GameImagesLocation = "./RawCardImages",
 				GameAudioLocation = "./GameAudio",
-				VOMappingLocation = "./data/VoiceoverMapping.json"
-
+				VOMappingLocation = "./data/VoiceoverMapping.json",
+				ArticleLocation =  "./WikiArticles"
 			};
+		}
+
+		public static Config LoadConfig(string configLocation)
+		{
+			configLocation = Path.GetFullPath(configLocation);
+			Config config = null;
+			Console.WriteLine($"Loading config from {configLocation}...");
+			if (File.Exists(configLocation))
+			{
+				config = JsonConvert.DeserializeObject<Config>(File.ReadAllText("./config.json"));
+				Console.WriteLine("Done.");
+			}
+			else
+			{
+				Console.WriteLine($"Config not found.  Generating blank config and saving to {configLocation}...");
+				config = Config.GetDefaultConfig();
+				File.WriteAllText(configLocation, JsonConvert.SerializeObject(config));
+				Console.WriteLine("Done.");
+			}
+
+			return config;
 		}
 	}
 }
