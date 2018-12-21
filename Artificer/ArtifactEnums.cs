@@ -105,7 +105,11 @@ namespace Artificer
 		Reveal,
 		Pulse,
 		GainsInitiative,
-		RapidDeployment
+		RapidDeployment,
+		DeathEffect,
+		PlayEffect,
+		ContinuousEffect,
+		ReactiveEffect
 	}
 
 }

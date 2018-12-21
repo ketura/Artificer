@@ -70,7 +70,11 @@ namespace Artificer
 				{ ArtifactKeyword.Reveal, new List<string>() { "Reveal" } },
 				{ ArtifactKeyword.Pulse, new List<string>() { "Pulse" } },
 				{ ArtifactKeyword.GainsInitiative, new List<string>() { "Get initiative", "Get Initiative" } },
-				{ ArtifactKeyword.RapidDeployment, new List<string>() { "Rapid Deployment" } }
+				{ ArtifactKeyword.RapidDeployment, new List<string>() { "Rapid Deployment" } },
+				{ ArtifactKeyword.DeathEffect, new List<string>() { "Death Effect:" } },
+				{ ArtifactKeyword.PlayEffect, new List<string>() { "Play Effect:" } },
+				{ ArtifactKeyword.ContinuousEffect, new List<string>() { "" } },
+				{ ArtifactKeyword.ReactiveEffect, new List<string>() { "" } }
 			};
 
 			public void Transform(WikiCard card)
@@ -79,6 +83,9 @@ namespace Artificer
 				{
 					foreach(string trigger in pair.Value)
 					{
+						if (String.IsNullOrWhiteSpace(trigger))
+							continue;
+
 						var match = Regex.Match(card.Text, trigger);
 						if(match.Success)
 						{
@@ -86,6 +93,11 @@ namespace Artificer
 						}
 					}
 				}
+
+				//if(card.Keywords.ContainsKey(ArtifactKeyword.DeathEffect))
+				//{
+				//	card.
+				//}
 			}
 		}
 
@@ -231,11 +243,24 @@ namespace Artificer
 				{
 					pair.Value.Card = cards[pair.Key];
 
-					if(pair.Value.Card.CardType == ArtifactCardType.Ability || pair.Value.Card.CardType == ArtifactCardType.PassiveAbility)
+					if (pair.Value.Card.CardType == ArtifactCardType.Ability || pair.Value.Card.CardType == ArtifactCardType.PassiveAbility)
 					{
 						var ability = pair.Value.Card.SubCard as WikiAbility;
 						ability.ParentID = card.ID;
 						ability.Parent = card;
+						ability.Name = ability.Name ?? card.Name;
+						if (card.SubCard is WikiHero hero)
+						{
+							hero.Abilities[ability.ID] = ability;
+						}
+						else if (card.SubCard is WikiCreep creep)
+						{
+							creep.Abilities[ability.ID] = ability;
+						}
+						else if (card.SubCard is WikiItem item)
+						{
+							item.Abilities[ability.ID] = ability;
+						}
 					}
 				}
 			}
@@ -251,6 +276,7 @@ namespace Artificer
 				{
 					var hero = card.SubCard as WikiHero;
 					var sig = cards[hero.SignatureCardID];
+					hero.SignatureCard = sig;
 					sig.SignatureOf = card.ID;
 					sig.SignatureParent = card;
 				}
@@ -263,12 +289,28 @@ namespace Artificer
 		{
 			protected override void TransformChildren(IDictionary<int, WikiCard> cards, WikiCard card)
 			{
-				if (card.CardType == ArtifactCardType.Hero)
+				if (card.CardType == ArtifactCardType.Ability ||
+						card.CardType == ArtifactCardType.PassiveAbility)
 				{
-					var hero = card.SubCard as WikiHero;
-					var sig = cards[hero.SignatureCardID];
-					sig.TokenOf = card.ID;
-					sig.TokenParent = card;
+					
+					var ability = card.SubCard as WikiAbility;
+					if (ability.CardSpawned != null)
+					{
+						var spawned = cards[ability.CardSpawnedID];
+						spawned.TokenOf = card.ID;
+						spawned.TokenParent = card;
+					}
+				}
+				else if (card.CardType == ArtifactCardType.Spell ||
+						card.CardType == ArtifactCardType.Improvement)
+				{
+					var spell = card.SubCard as WikiSpell;
+					if (spell.CardSpawned != null)
+					{
+						var spawned = cards[spell.CardSpawnedID];
+						spawned.TokenOf = card.ID;
+						spawned.TokenParent = card;
+					}
 				}
 			}
 

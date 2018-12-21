@@ -166,6 +166,11 @@ namespace Artificer
 			return Regex.Replace(str, @"[^\w]+", "_");
 		}
 
+		public static string GetAudioName(WikiCard card, string audioType, string audioName, string extension="mp3")
+		{
+			return $"{card.SetID.ToString("00")}_{ScrubString(card.Name)}_{card.ID}_{audioType}_{ScrubString(audioName)}.{extension}";
+		}
+
 		public static string GetImageName(WikiCard card, string imageType, string language = "default", string extension = "jpg")
 		{
 			return $"{card.SetID.ToString("00")}_{ScrubString(card.Name)}_{card.ID}_{imageType}_{language}.{extension}";
@@ -247,9 +252,21 @@ namespace Artificer
 		public ArtifactPassiveAbilityType PassiveAbilityType { get; set; }
 		public int Charges { get; set; }
 
-		public WikiAbility(ValveCard card) : base(card.card_id, card.card_name["english"] + ":Effect")
+		public WikiAbility(ValveCard card) : base(card.card_id, card.card_name["english"] + (card.card_type != ArtifactCardType.Ability && card.card_type != ArtifactCardType.PassiveAbility ? ":Effect" : ""))
 		{
-			AbilityType = ArtifactAbilityType.None;
+			switch (card.card_type)
+			{
+				case ArtifactCardType.Ability:
+					AbilityType = ArtifactAbilityType.Active;
+					break;
+				case ArtifactCardType.PassiveAbility:
+					AbilityType = ArtifactAbilityType.Passive;
+					break;
+				default:
+					AbilityType = ArtifactAbilityType.None;
+					break;
+			}
+
 			PassiveAbilityType = ArtifactPassiveAbilityType.None;
 			Charges = card.charges;
 		}
@@ -296,6 +313,7 @@ namespace Artificer
 		public int Attack { get; set; }
 		public int Armor { get; set; }
 		public int Health { get; set; }
+		public WikiCard SignatureCard { get; set; }
 		public int SignatureCardID { get; set; }
 		public Dictionary<int, WikiAbility> Abilities { get; set; }
 		public string HeroIcon { get; set; }

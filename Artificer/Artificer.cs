@@ -85,6 +85,7 @@ namespace Artificer
 			if (GameFileInfo == null)
 			{
 				ParseGameData();
+				MergeAPIWithGameFiles();
 			}
 		}
 
@@ -386,6 +387,8 @@ namespace Artificer
 					Cards[card.card_id] = newCard;
 				}
 			}
+
+			WikiArticleGenerator.Sets = Sets;
 		}
 
 		public void LoadVOMapping()
@@ -483,6 +486,7 @@ namespace Artificer
 				foreach (var vo in voiceovers)
 				{
 					card.VoiceOverLinesRaw[vo.ResponseTrigger] = vo.RawText;
+					card.VoiceOverFiles[vo.ResponseTrigger] = WikiCard.GetAudioName(card, "response", vo.ResponseTrigger);
 				}
 			}
 
@@ -854,6 +858,10 @@ namespace Artificer
 			var pages = bot.DownloadArticles(titles);
 
 			var basepath = Path.Combine(fileLocation, "Existing_Articles");
+			if (Directory.Exists(basepath))
+			{
+				Directory.Delete(basepath, true);
+			}
 			Directory.CreateDirectory(basepath);
 
 			string results = "";
@@ -891,6 +899,10 @@ namespace Artificer
 														.Select(x => x.Value);
 
 			var basepath = Path.Combine(fileLocation, "New_Articles");
+			if(Directory.Exists(basepath))
+			{
+				Directory.Delete(basepath, true);
+			}
 			Directory.CreateDirectory(basepath);
 
 			foreach (var card in validCards)
@@ -901,140 +913,36 @@ namespace Artificer
 
 		public Dictionary<string, string> GenerateArticle(WikiCard card, string basefile)
 		{
-			string tabType = null;
+			string newArticle = null;
 			switch (card.CardType)
 			{
 				case ArtifactCardType.Hero:
-					tabType = "Hero";
+					newArticle = new HeroArticleGenerator(card).GenerateArticleText();
 					break;
 				case ArtifactCardType.Creep:
-					tabType = "Creep";
+					newArticle = new CreepArticleGenerator(card).GenerateArticleText();
 					break;
 				case ArtifactCardType.Improvement:
-					tabType = "Improvement";
+					newArticle = new ImprovementArticleGenerator(card).GenerateArticleText();
 					break;
 				case ArtifactCardType.Spell:
-					tabType = "Spell";
+					newArticle = new SpellArticleGenerator(card).GenerateArticleText();
 					break;
 				case ArtifactCardType.Item:
-					tabType = "Item";
+					newArticle = new ItemArticleGenerator(card).GenerateArticleText();
 					break;
 				case ArtifactCardType.Stronghold:
 				case ArtifactCardType.Pathing:
 				case ArtifactCardType.Ability:
 				case ArtifactCardType.PassiveAbility:
 				default:
-					tabType = null;
+					newArticle = null;
 					break;
 			}
 
-			string mainPage = "";
-			mainPage += $"{{{{Tabs/{tabType}}}}}\n";
-			mainPage += $@"{{{{Card Infobox
-| ID = {card.ID}
-| BaseID = {card.BaseID}
-| MarketplaceID = {card.MarketplaceID}
-| Name = {card.Name}
-| Aliases = 
-| SetID = {card.SetID}
-| CardType = {card.CardType}
-| SubType = {card.SubType}
-| Rarity = {card.Rarity}
-| Color = {card.Color}
-| TokenOf = {card.TokenOf ?? 0}
-| SignatureOf = {card.SignatureOf ?? 0}
-| IsCollectable = {card.IsCollectable}
-| Text = {card.Text}
-| TextRaw = {card.TextRaw}
-| TextFormatted = {card.TextFormatted}
-| CardImage = {card.CardImage}
-| CardImageRaw = {card.CardImageRaw}
-| CardIcon = {card.CardIcon}
-| Illustrator = {card.Illustrator}
-| VoiceActor = {card.VoiceActor}
-| Lore = {card.Lore}
-| LoreFormatted = {card.LoreFormatted}
-| Keywords = {String.Join(",", card.Keywords)}}}}}\n";
-
-			switch (card.CardType)
-			{
-				case ArtifactCardType.Hero:
-					var hero = card.SubCard as WikiHero;
-					mainPage += $@"{{{{Hero Infobox
-| ID = {card.ID}
-| Name = {card.Name}
-| Attack = {hero.Attack}
-| Armor = {hero.Armor}
-| Health = {hero.Health}
-| SignatureCardID = {hero.SignatureCardID}
-| Abilities = {String.Join(",", hero.Abilities.Keys.Select(x => x.ToString()))}
-| HeroIcon = {hero.HeroIcon}
-| HeroIconRaw = {hero.HeroIconRaw}}}}}\n\n";
-					break;
-				case ArtifactCardType.Creep:
-					var creep = card.SubCard as WikiCreep;
-					mainPage += $@"{{{{{tabType} Infobox
-| ID = {card.ID}
-| Name = {card.Name}
-| ManaCost = {creep.ManaCost}
-| Attack = {creep.Attack}
-| Armor = {creep.Armor}
-| Health = {creep.Health}
-| Abilities = {String.Join(",", creep.Abilities.Keys.Select(x => x.ToString()))}}}}}\n\n";
-					break;
-				case ArtifactCardType.Improvement:
-				case ArtifactCardType.Spell:
-					var spell = card.SubCard as WikiSpell;
-					mainPage += $@"{{{{{tabType} Infobox
-| ID = {card.ID}
-| Name = {card.Name}
-| CardSpawned = {spell.CardSpawned}
-| ManaCost = {spell.ManaCost}
-| Charges = {spell.Charges}
-| IsCrosslane = {spell.IsCrosslane}}}}}\n\n";
-					break;
-				case ArtifactCardType.Item:
-					var item = card.SubCard as WikiItem;
-					mainPage += $@"{{{{Item Infobox
-| ID = {card.ID}
-| Name = {card.Name}
-| GoldCost = {item.GoldCost}
-| Abilities = {String.Join(",", item.Abilities.Keys.Select(x => x.ToString()))}}}}}\n\n";
-					break;
-				default:
-					break;
-			}
-
-			if (card.CardType == ArtifactCardType.Item)
-			{
-				mainPage += $"{{{{{tabType.ToUpper()[0]}|{card.Name}}}}} is an [[{tabType}]] in the [[{Sets[card.SetID].Name}]] set.\n\n";
-			}
-			else if (card.CardType == ArtifactCardType.Improvement)
-			{
-				mainPage += $"{{{{Im|{card.Name}}}}} is a {card.Color} [[{tabType}]] in the [[{Sets[card.SetID].Name}]] set.\n\n";
-			}
-			else
-			{
-				mainPage += $"{{{{{tabType.ToUpper()[0]}|{card.Name}}}}} is a {card.Color} [[{tabType}]] in the [[{Sets[card.SetID].Name}]] set.\n\n";
-			}
-
-			if(card.CardType == ArtifactCardType.Hero)
-			{
-
-			}
-			else
-			{
-				mainPage += "== Card Text ==\n";
-				mainPage += $"{card.TextFormatted}\n\n";
-
-				mainPage += "== Miscellaneous ==\n";
-				mainPage += $"* [{card.CardImageRaw} | Illustrated ] by [[{card.Illustrator}]].\n\n";
-
-				mainPage += $"[[Category:{tabType}]] [[Category:{card.Color}]] [[Category:{card.Rarity}]] [[Category:{Sets[card.SetID].Name}]]";
-			}
 
 
-			File.WriteAllText($"{basefile}.txt", mainPage);
+			File.WriteAllText($"{Path.GetFullPath(basefile)}.txt", newArticle);
 
 			// - items no color, items need subtype in categories
 			// - items have no text?? might be subsumed in abilities
