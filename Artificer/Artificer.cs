@@ -28,6 +28,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using ValveResourceFormat;
 using ValveResourceFormat.ResourceTypes;
 
@@ -862,7 +863,11 @@ namespace Artificer
 			{
 				Directory.Delete(basepath, true);
 			}
-			Directory.CreateDirectory(basepath);
+			while(!Directory.Exists(basepath))
+			{
+				Directory.CreateDirectory(basepath);
+			}
+			
 
 			string results = "";
 
@@ -898,12 +903,16 @@ namespace Artificer
 																 && x.Value.CardType != ArtifactCardType.Pathing)
 														.Select(x => x.Value);
 
-			var basepath = Path.Combine(fileLocation, "New_Articles");
+			var basepath = Path.GetFullPath(Path.Combine(fileLocation, "New_Articles"));
 			if(Directory.Exists(basepath))
 			{
 				Directory.Delete(basepath, true);
+			} //Holy shit why am i still having the dir disappear
+			Thread.Sleep(50);
+			while (!Directory.Exists(basepath))
+			{
+				Directory.CreateDirectory(basepath);
 			}
-			Directory.CreateDirectory(basepath);
 
 			foreach (var card in validCards)
 			{

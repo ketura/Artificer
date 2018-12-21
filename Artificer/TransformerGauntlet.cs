@@ -94,11 +94,12 @@ namespace Artificer
 
 			gauntlet.AddSingle(new ThisCardNameSubstitution());
 			gauntlet.AddSingle(new ParentCardNameSubstitution());
+			gauntlet.AddSingle(new FindAbilityCooldown());
 
 			gauntlet.AddSingle(new SimpleTextSubstitution(@"\[g:608\[&#9633;]]", "[Pulse]"));
 			gauntlet.AddSingle(new SimpleTextSubstitution(@"\[\[g:604\[&#9634; Get initiative]]", "Get initiative"));
 			gauntlet.AddSingle(new SimpleTextSubstitution(@"\[g:\d+\[(.*?)]]", "$1"));
-			gauntlet.AddSingle(new SimpleTextSubstitution(@"\[abilityname\[.*?]]", ""));
+			gauntlet.AddSingle(new SimpleTextSubstitution(@"\[activatedability\[\[color:ability\[Active &#9632;(\d):]]", "[Cooldown: $1]"));
 			gauntlet.AddSingle(new SimpleTextSubstitution(@"\[\[(.*?)]]", "$1"));
 			gauntlet.AddSingle(new SimpleTextSubstitution(@"<BR/>\\n", "<br/>"));
 			gauntlet.AddSingle(new SimpleTextSubstitution(@"<br/>", "<br/>"));

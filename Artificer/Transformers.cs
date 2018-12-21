@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace Artificer
 {
@@ -227,11 +228,31 @@ namespace Artificer
 				card.TextFormatted = card.TextRaw;
 				card.Lore = card.LoreRaw;
 				card.LoreFormatted = card.LoreRaw;
-				
-				foreach(var pair in card.VoiceOverLinesRaw)
+
+				foreach (var pair in card.VoiceOverLinesRaw)
 				{
 					card.VoiceOverLines[pair.Key] = pair.Value;
 				}
+			}
+		}
+
+		public class FindAbilityCooldown : ICardTransformer
+		{
+			public void Transform(WikiCard card)
+			{
+
+				var match = Regex.Match(card.TextRaw, @"\[activatedability\[\[color:ability\[Active &#9632;(\d):]]");
+				if(match.Captures.Count > 0)
+				{
+					foreach(var ability in card.Abilities.Values)
+					{
+						if(ability.AbilityType == ArtifactAbilityType.Active)
+						{
+							ability.Cooldown = Int32.Parse(match.Groups[1].Value);
+						}
+					}
+				}
+
 			}
 		}
 
@@ -249,18 +270,14 @@ namespace Artificer
 						ability.ParentID = card.ID;
 						ability.Parent = card;
 						ability.Name = ability.Name ?? card.Name;
-						if (card.SubCard is WikiHero hero)
-						{
-							hero.Abilities[ability.ID] = ability;
-						}
-						else if (card.SubCard is WikiCreep creep)
-						{
-							creep.Abilities[ability.ID] = ability;
-						}
-						else if (card.SubCard is WikiItem item)
-						{
-							item.Abilities[ability.ID] = ability;
-						}
+						card.Abilities[ability.ID] = ability;
+					}
+
+					if(card.CardType == ArtifactCardType.Ability || card.CardType == ArtifactCardType.PassiveAbility)
+					{
+						var ability = card.SubCard as WikiAbility;
+						ability.CardSpawned = pair.Value.Card;
+						ability.CardSpawnedID = pair.Key;
 					}
 				}
 			}

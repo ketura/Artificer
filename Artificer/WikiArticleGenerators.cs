@@ -48,8 +48,8 @@ namespace Artificer
 | SubType = {card.SubType}
 | Rarity = {card.Rarity}
 | Color = {card.Color}
-| TokenOf = {card.TokenOf ?? 0}
-| SignatureOf = {card.SignatureOf ?? 0}
+| TokenOf = {(card.TokenOf.HasValue ? card.TokenOf.ToString() : "")}
+| SignatureOf = {(card.SignatureOf.HasValue ? card.SignatureOf.ToString() : "")}
 | IsCollectable = {card.IsCollectable}
 | Text = {card.Text}
 | TextRaw = {card.TextRaw}
@@ -65,9 +65,14 @@ namespace Artificer
 ";
 		}
 
-		public static string GetStinger(string template, string name, ArtifactColor color, ArtifactCardType type, string setname)
+		public static string GetStinger(string template, WikiCard card, string setname)
 		{
-			return $"{{{{{template}|{name}}}}} is a {(color == ArtifactColor.None ? " " : color.ToString())}[[{type}]] in the [[{setname}]] set.\n\n";
+			string stinger = $"{{{{{template}|{card.Name}}}}} is a {(card.Color == ArtifactColor.None ? " " : card.Color.ToString() + " ")}[[{card.CardType}]] in the [[{setname}]] set.";
+			if(card.SignatureParent != null)
+			{
+				stinger += $"  It is the [[Signature Card]] of the [[hero]] [[{card.SignatureParent.Name}]].";
+			}
+			return stinger;
 		}
 
 		public static string GetAbilityInfoboxes(IEnumerable<WikiAbility> abilities)
@@ -80,7 +85,8 @@ namespace Artificer
 | Name = {ability.Name}
 | CardID = {ability.ParentID}
 | AbilityType = {ability.AbilityType}
-| Charges = {ability.Charges}}}}}
+| Charges = {ability.Charges}
+| Cooldown = {ability.Cooldown}}}}}
 ";
 			}
 			return result;
@@ -88,7 +94,7 @@ namespace Artificer
 
 		public static string GetIllustrator(WikiCard card)
 		{
-			return $"* [[{card.CardImageRaw}|Illustrated]] by [[{card.Illustrator}]].";
+			return $"* [[Media:{card.CardImageRaw}|Illustrated]] by [[{card.Illustrator}]].";
 		}
 
 		public static string GetCardReference(WikiCard card)
@@ -194,25 +200,25 @@ namespace Artificer
 | Armor = {SubCard.Armor}
 | Health = {SubCard.Health}
 | SignatureCardID = {SubCard.SignatureCardID}
-| Abilities = {String.Join(",", SubCard.Abilities.Keys.Select(x => x.ToString()))}
+| Abilities = {String.Join(",", Card.Abilities.Keys.Select(x => x.ToString()))}
 | HeroIcon = {SubCard.HeroIcon}
 | HeroIconRaw = {SubCard.HeroIconRaw}}}}}";
 		}
 
 		protected override void AddCardStinger(WikiArticle article)
 		{
-			GetStinger(TypeTemplate, Card.Name, Card.Color, Card.CardType, Sets[Card.SetID].Name);
+			article.CardStinger = GetStinger(TypeTemplate, Card, Sets[Card.SetID].Name);
 		}
 
 		protected override void AddSections(WikiArticle article)
 		{
-			if (SubCard.Abilities.Count > 0)
+			if (Card.Abilities.Count > 0)
 			{
-				article.AddSection("Ability", GetAbilityInfoboxes(SubCard.Abilities.Values));
+				article.AddSection("Ability", GetAbilityInfoboxes(Card.Abilities.Values));
 
-				if (SubCard.Abilities.Any(x => x.Value.CardSpawned != null))
+				if (Card.Abilities.Any(x => x.Value.CardSpawned != null))
 				{
-					var cardSpawned = SubCard.Abilities.Where(x => x.Value.CardSpawned != null).Select(x => x.Value.CardSpawned).First();
+					var cardSpawned = Card.Abilities.Where(x => x.Value.CardSpawned != null).Select(x => x.Value.CardSpawned).First();
 					article.AddSection("Card Spawned", GetCardReference(cardSpawned));
 				}
 			}
@@ -227,7 +233,7 @@ namespace Artificer
 		{
 			article.Categories = new List<string>()
 			{
-				Card.CardType.ToString(),
+				"Heroes",
 				Card.Color.ToString(),
 				Card.Rarity.ToString(),
 				Sets[Card.SetID].Name
@@ -263,12 +269,12 @@ namespace Artificer
 | Attack = {SubCard.Attack}
 | Armor = {SubCard.Armor}
 | Health = {SubCard.Health}
-| Abilities = {String.Join(",", SubCard.Abilities.Keys.Select(x => x.ToString()))}}}}}{"\n\n"}";
+| Abilities = {String.Join(",", Card.Abilities.Keys.Select(x => x.ToString()))}}}}}";
 		}
 
 		protected override void AddCardStinger(WikiArticle article)
 		{
-			GetStinger(TypeTemplate, Card.Name, Card.Color, Card.CardType, Sets[Card.SetID].Name);
+			article.CardStinger = GetStinger(TypeTemplate, Card, Sets[Card.SetID].Name);
 		}
 
 		protected override void AddSections(WikiArticle article)
@@ -278,13 +284,13 @@ namespace Artificer
 				article.AddSection("Card Text", Card.TextFormatted);
 			}
 
-			if(SubCard.Abilities.Count > 0)
+			if(Card.Abilities.Count > 0)
 			{
-				article.AddSection("Ability", GetAbilityInfoboxes(SubCard.Abilities.Values));
+				article.AddSection("Ability", GetAbilityInfoboxes(Card.Abilities.Values));
 
-				if (SubCard.Abilities.Any(x => x.Value.CardSpawned != null))
+				if (Card.Abilities.Any(x => x.Value.CardSpawned != null))
 				{
-					var cardSpawned = SubCard.Abilities.Where(x => x.Value.CardSpawned != null).Select(x => x.Value.CardSpawned).First();
+					var cardSpawned = Card.Abilities.Where(x => x.Value.CardSpawned != null).Select(x => x.Value.CardSpawned).First();
 					article.AddSection("Card Spawned", GetCardReference(cardSpawned));
 				}
 			}
@@ -296,7 +302,7 @@ namespace Artificer
 		{
 			article.Categories = new List<string>()
 			{
-				Card.CardType.ToString(),
+				"Creeps",
 				Card.Color.ToString(),
 				Card.Rarity.ToString(),
 				Sets[Card.SetID].Name
@@ -331,12 +337,12 @@ namespace Artificer
 | CardSpawned = {SubCard.CardSpawned}
 | ManaCost = {SubCard.ManaCost}
 | Charges = {SubCard.Charges}
-| IsCrosslane = {SubCard.IsCrosslane}}}}}\n\n";
+| IsCrosslane = {SubCard.IsCrosslane}}}}}";
 		}
 
 		protected override void AddCardStinger(WikiArticle article)
 		{
-			GetStinger(TypeTemplate, Card.Name, Card.Color, Card.CardType, Sets[Card.SetID].Name);
+			article.CardStinger = GetStinger(TypeTemplate, Card, Sets[Card.SetID].Name);
 		}
 
 		protected override void AddSections(WikiArticle article)
@@ -356,7 +362,7 @@ namespace Artificer
 		{
 			article.Categories = new List<string>()
 			{
-				Card.CardType.ToString(),
+				"Improvements",
 				Card.Color.ToString(),
 				Card.Rarity.ToString(),
 				Sets[Card.SetID].Name
@@ -391,12 +397,12 @@ namespace Artificer
 | CardSpawned = {SubCard.CardSpawned}
 | ManaCost = {SubCard.ManaCost}
 | Charges = {SubCard.Charges}
-| IsCrosslane = {SubCard.IsCrosslane}}}}}\n\n";
+| IsCrosslane = {SubCard.IsCrosslane}}}}}";
 		}
 
 		protected override void AddCardStinger(WikiArticle article)
 		{
-			GetStinger(TypeTemplate, Card.Name, Card.Color, Card.CardType, Sets[Card.SetID].Name);
+			article.CardStinger = GetStinger(TypeTemplate, Card, Sets[Card.SetID].Name);
 		}
 
 		protected override void AddSections(WikiArticle article)
@@ -416,7 +422,7 @@ namespace Artificer
 		{
 			article.Categories = new List<string>()
 			{
-				Card.CardType.ToString(),
+				"Spells",
 				Card.Color.ToString(),
 				Card.Rarity.ToString(),
 				Sets[Card.SetID].Name
@@ -433,6 +439,14 @@ namespace Artificer
 
 	public class ItemArticleGenerator : WikiArticleGenerator<WikiItem>
 	{
+		private static Dictionary<ArtifactSubType, string> CategoryMapping = new Dictionary<ArtifactSubType, string>()
+		{
+			{ ArtifactSubType.Accessory, "Accessories" },
+			{ ArtifactSubType.Armor, "Armor" },
+			{ ArtifactSubType.Consumable, "Consumables" },
+			{ ArtifactSubType.Deed, "Deeds" },
+			{ ArtifactSubType.Weapon, "Weapons" },
+		};
 		protected override void AddTabTemplate(WikiArticle article)
 		{
 			article.TabTemplate = GetTabTemplate(Card.CardType);
@@ -449,12 +463,12 @@ namespace Artificer
 | ID = {Card.ID}
 | Name = {Card.Name}
 | GoldCost = {SubCard.GoldCost}
-| Abilities = {String.Join(",", SubCard.Abilities.Keys.Select(x => x.ToString()))}}}}}{"\n\n"}";
+| Abilities = {String.Join(",", Card.Abilities.Keys.Select(x => x.ToString()))}}}}}";
 		}
 
 		protected override void AddCardStinger(WikiArticle article)
 		{
-			article.CardStinger = $"{{{{{TypeTemplate}|{Card.Name}}}}} is an [[Item]] in the [[{Sets[Card.SetID].Name}]] set.\n\n";
+			article.CardStinger = $"{{{{{TypeTemplate}|{Card.Name}}}}} is an [[Item]] in the [[{Sets[Card.SetID].Name}]] set.";
 		}
 
 		protected override void AddSections(WikiArticle article)
@@ -464,13 +478,13 @@ namespace Artificer
 				article.AddSection("Card Text", Card.TextFormatted);
 			}
 
-			if (SubCard.Abilities.Count > 0)
+			if (Card.Abilities.Count > 0)
 			{
-				article.AddSection("Ability", GetAbilityInfoboxes(SubCard.Abilities.Values));
+				article.AddSection("Ability", GetAbilityInfoboxes(Card.Abilities.Values));
 
-				if(SubCard.Abilities.Any(x => x.Value.CardSpawned != null))
+				if(Card.Abilities.Any(x => x.Value.CardSpawned != null))
 				{
-					var cardSpawned = SubCard.Abilities.Where(x => x.Value.CardSpawned != null).Select(x => x.Value.CardSpawned).First();
+					var cardSpawned = Card.Abilities.Where(x => x.Value.CardSpawned != null).Select(x => x.Value.CardSpawned).First();
 					article.AddSection("Card Spawned", GetCardReference(cardSpawned));
 				}
 			}
@@ -482,7 +496,8 @@ namespace Artificer
 		{
 			article.Categories = new List<string>()
 			{
-				Card.CardType.ToString(),
+				"Items",
+				CategoryMapping[Card.SubType],
 				Card.Color.ToString(),
 				Card.Rarity.ToString(),
 				Sets[Card.SetID].Name
