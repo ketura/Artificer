@@ -23,7 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-
+using System.Text.RegularExpressions;
 using static Artificer.SharedArticleFunctions;
 
 namespace Artificer
@@ -177,10 +177,17 @@ namespace Artificer
 
 		protected override void AddSections(WikiArticle article)
 		{
-			string[] loreChunks = Card.LoreFormatted.Split("—");
-			article.AddSection("Artifact", $@"{{{{Quote
+			if(Card.LoreFormatted == null)
+			{
+				article.AddSection("Artifact", $"This card does not have lore.");
+			}
+			else
+			{
+				string[] loreChunks = Card.LoreFormatted.Split("—");
+				article.AddSection("Artifact", $@"{{{{Quote
 | text = {loreChunks[0].Trim()}
-| source = [[{loreChunks[1].Trim()}]]}}}}");
+| source = {loreChunks[1].Trim()}}}}}");
+			}
 		}
 
 		protected override void AddCategories(WikiArticle article)
@@ -190,7 +197,8 @@ namespace Artificer
 
 		protected override string Finalize(WikiArticle article, string result)
 		{
-			return base.Finalize(article, result);
+			result = result.Replace("\r", "");
+			return Regex.Replace(result, @"\n\n+", "\n\n");
 		}
 
 		public LoreArticleGenerator(WikiCard card) : base(card, card.CardType) { }
@@ -228,12 +236,13 @@ namespace Artificer
 
 		protected override string Finalize(WikiArticle article, string result)
 		{
-			if(Card.VoiceOverLines.Count == 0)
+			result = result.Replace("\r", "");
+			if (Card.VoiceOverLines.Count == 0)
 			{
 				return GetEmptyResponseArticle(Card);
 			}
 
-			return result;
+			return Regex.Replace(result, @"\n\n+", "\n\n");
 		}
 
 		public ResponseArticleGenerator(WikiCard card) : base(card, card.CardType) { }

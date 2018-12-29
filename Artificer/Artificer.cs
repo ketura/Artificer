@@ -851,41 +851,56 @@ namespace Artificer
 			ArtifactWikiBot bot = new ArtifactWikiBot(wikiurl, wikiuser, wikipass);
 			bot.Initialize();
 
-			var titles = Cards.Where(x => x.Value.CardType != ArtifactCardType.Ability 
-																 && x.Value.CardType != ArtifactCardType.PassiveAbility 
-																 && x.Value.CardType != ArtifactCardType.Stronghold
-																 && x.Value.CardType != ArtifactCardType.Pathing)
-				.Select(x => x.Value.Name);
-			var pages = bot.DownloadArticles(titles);
-
-			var basepath = Path.Combine(fileLocation, "Existing_Articles");
+			string results = "";
+			string basepath = Path.Combine(fileLocation, "Existing_Articles");
 			if (Directory.Exists(basepath))
 			{
 				Directory.Delete(basepath, true);
-			}
-			while(!Directory.Exists(basepath))
+			} //Holy shit why am i still having the dir disappear
+			Thread.Sleep(50);
+			while (!Directory.Exists(basepath))
 			{
 				Directory.CreateDirectory(basepath);
 			}
-			
+
+			var titles = Cards.Where(x => x.Value.CardType != ArtifactCardType.Ability
+																 && x.Value.CardType != ArtifactCardType.PassiveAbility
+																 && x.Value.CardType != ArtifactCardType.Stronghold
+																 && x.Value.CardType != ArtifactCardType.Pathing)
+				.Select(x => x.Value.Name);
+
+			var lore = titles.Select(x => $"{x}/Lore");
+			var audio = titles.Select(x => $"{x}/Audio");
+
+			DownloadCardArticleBatch(bot, titles, basepath);
+			DownloadCardArticleBatch(bot, lore, basepath);
+			DownloadCardArticleBatch(bot, audio, basepath);
+
+
+			File.WriteAllText(Path.Combine(basepath, "results.txt"), results);
+
+			bot.End();
+		}
+
+		private string DownloadCardArticleBatch(ArtifactWikiBot bot, IEnumerable<string> titles, string basepath)
+		{
+			var pages = bot.DownloadArticles(titles);
 
 			string results = "";
 
 			foreach (var page in pages)
 			{
-				if(!page.Exists)
+				if (!page.Exists)
 				{
 					results += $"{page.Title} does not exist.\n";
 					continue;
 				}
 
-				string path = Path.Combine(basepath, page.Title);
+				string path = Path.Combine(basepath, page.Title.Replace("/", "_"));
 				File.WriteAllText($"{path}.txt", page.Content);
 			}
 
-			File.WriteAllText(Path.Combine(basepath, "results.txt"), results);
-
-			bot.End();
+			return results;
 		}
 
 		public void GenerateWikiArticles()
@@ -949,9 +964,14 @@ namespace Artificer
 					break;
 			}
 
+			string loreArticle = new LoreArticleGenerator(card).GenerateArticleText();
+			string audioArticle = new ResponseArticleGenerator(card).GenerateArticleText();
+
 
 
 			File.WriteAllText($"{Path.GetFullPath(basefile)}.txt", newArticle);
+			File.WriteAllText($"{Path.GetFullPath(basefile)}_Lore.txt", loreArticle);
+			File.WriteAllText($"{Path.GetFullPath(basefile)}_Audio.txt", audioArticle);
 
 			// - items no color, items need subtype in categories
 			// - items have no text?? might be subsumed in abilities

@@ -101,7 +101,7 @@ namespace Artificer
 		protected abstract void AddCardStinger(WikiArticle article);
 		protected abstract void AddSections(WikiArticle article);
 		protected abstract void AddCategories(WikiArticle article);
-		protected virtual string Finalize(WikiArticle article, string result) { return result; }
+		protected virtual string Finalize(WikiArticle article, string result) { return result.Replace("\r", ""); }
 
 		public string GenerateArticleText()
 		{

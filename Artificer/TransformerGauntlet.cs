@@ -101,6 +101,7 @@ namespace Artificer
 			gauntlet.AddSetup(new SimpleTextSubstitution(@"\[g:\d+\[(.*?)]]", "$1"));
 			gauntlet.AddSetup(new SimpleTextSubstitution(@"\[abilityname\[.*?]]", ""));
 			gauntlet.AddSetup(new SimpleTextSubstitution(@"\[activatedability\[\[color:ability\[Active &#9632;(\d):]]", "[Cooldown: $1]"));
+			gauntlet.AddSetup(new SimpleTextSubstitution(@"]]$", ""));
 			gauntlet.AddSetup(new SimpleTextSubstitution(@"\[\[(.*?)]]", "$1"));
 			gauntlet.AddSetup(new SimpleTextSubstitution(@"<BR/>\\n", "<br/>"));
 			gauntlet.AddSetup(new SimpleTextSubstitution(@"<br/>", "<br/>"));
@@ -110,6 +111,7 @@ namespace Artificer
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[g:\d+\[(.*?)]]", "[[$1]]"));
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[abilityname\[.*?]]", ""));
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[activatedability\[\[color:ability\[Active &#9632;(\d):]]", "[[Cooldown]]: $1."));
+			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"]]$", ""));
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"<BR/>\\n", "<br/>"));
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"<br/>", "<br/>"));
 
