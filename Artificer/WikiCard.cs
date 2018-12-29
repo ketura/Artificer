@@ -82,8 +82,7 @@ namespace Artificer
 		[JsonConverter(typeof(StringEnumConverter))]
 		public ArtifactColor Color { get; set; }
 		
-		public int? TokenOf { get; set; }
-		public WikiCard TokenParent { get; set; }
+		public List<WikiCard> TokenParents { get; set; }
 		public int? SignatureOf { get; set; }
 		public WikiCard SignatureParent { get; set; }
 		public bool IsCollectable { get; set; }
@@ -120,6 +119,7 @@ namespace Artificer
 			References = new Dictionary<int, WikiCardReference>();
 			Abilities = new Dictionary<int, WikiAbility>();
 			Keywords = new Dictionary<ArtifactKeyword, string>();
+			TokenParents = new List<WikiCard>();
 		}
 
 		public WikiCard(int setID, ValveCard card) : this()
@@ -144,7 +144,6 @@ namespace Artificer
 			else
 				Color = ArtifactColor.None;
 
-			TokenOf = null;
 			SignatureOf = null;
 			//We manually set all signatures, tokens, and abilities to false
 			IsCollectable = true;

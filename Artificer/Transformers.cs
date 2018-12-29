@@ -201,10 +201,10 @@ namespace Artificer
 					parent = (card.SubCard as WikiAbility).Parent.Name;
 				}
 				
-				if(card.TokenParent != null)
-				{
-					parent = card.TokenParent.Name;
-				}
+				//if(card.TokenParents.Count == 0)
+				//{
+				//	parent = card.TokenParent.Name;
+				//}
 
 				if(card.SignatureParent != null)
 				{
@@ -276,8 +276,12 @@ namespace Artificer
 					if(card.CardType == ArtifactCardType.Ability || card.CardType == ArtifactCardType.PassiveAbility)
 					{
 						var ability = card.SubCard as WikiAbility;
-						ability.CardSpawned = pair.Value.Card;
-						ability.CardSpawnedID = pair.Key;
+						if(card.Text.Contains($"ummon a {pair.Value.Card.Name}"))
+						{
+							ability.CardSpawned = pair.Value.Card;
+							ability.CardSpawnedID = pair.Key;
+						}
+						
 					}
 				}
 			}
@@ -314,8 +318,7 @@ namespace Artificer
 					if (ability.CardSpawned != null)
 					{
 						var spawned = cards[ability.CardSpawnedID];
-						spawned.TokenOf = card.ID;
-						spawned.TokenParent = card;
+						spawned.TokenParents.Add(card);
 					}
 				}
 				else if (card.CardType == ArtifactCardType.Spell ||
@@ -325,8 +328,7 @@ namespace Artificer
 					if (spell.CardSpawned != null)
 					{
 						var spawned = cards[spell.CardSpawnedID];
-						spawned.TokenOf = card.ID;
-						spawned.TokenParent = card;
+						spawned.TokenParents.Add(card);
 					}
 				}
 			}

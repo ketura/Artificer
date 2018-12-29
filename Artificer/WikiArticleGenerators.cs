@@ -48,7 +48,7 @@ namespace Artificer
 | SubType = {card.SubType}
 | Rarity = {card.Rarity}
 | Color = {card.Color}
-| TokenOf = {(card.TokenOf.HasValue ? card.TokenOf.ToString() : "")}
+| TokenOf = {(card.TokenParents.Count > 0 ? String.Join(",", card.TokenParents.Select(x => x.ID)) : "")}
 | SignatureOf = {(card.SignatureOf.HasValue ? card.SignatureOf.ToString() : "")}
 | IsCollectable = {card.IsCollectable}
 | Text = {card.Text}
@@ -71,6 +71,46 @@ namespace Artificer
 			if(card.SignatureParent != null)
 			{
 				stinger += $"  It is the [[Signature Card]] of the [[hero]] [[{card.SignatureParent.Name}]].";
+			}
+			else if (card.TokenParents.Count > 1)
+			{
+				var spellParents = card.TokenParents.Where(x => x.SubCard is WikiSpell);
+				var abilityParents = card.TokenParents.Where(x => x.SubCard is WikiAbility);
+
+				if (spellParents.Count() > 0 && abilityParents.Count() > 0)
+				{
+					string spellList = String.Join(", ", spellParents.Select(x => $"[[{x.Name}]]"), 0, spellParents.Count() - 1);
+					spellList += $" or {spellParents.Last().Name}";
+					string abilityList = String.Join(", ", abilityParents.Select(x => $"[[{x.Name}]]"), 0, abilityParents.Count() - 1);
+					abilityList += $" or {abilityParents.Last().Name}";
+					stinger += $"  It is spawned when {spellList} is played, or when the ability of {abilityList} is activated.";
+				}
+				else if (spellParents.Count() > 0 && abilityParents.Count() == 0)
+				{
+					string list = String.Join(", ", spellParents.Select(x => $"[[{x.Name}]]"), 0, spellParents.Count() - 1);
+					list += $" or {spellParents.Last().Name}";
+					stinger += $"  It is spawned when {list} is played.";
+				}
+				if (spellParents.Count() == 0 && abilityParents.Count() > 0)
+				{
+					string list = String.Join(", ", abilityParents.Select(x => $"[[{x.Name}]]"), 0, abilityParents.Count() - 1);
+					list += $" or {abilityParents.Last().Name}";
+					stinger += $"  It is spawned when the ability of {list} is activated.";
+				}
+			}
+			else if (card.TokenParents.Count > 0)
+			{
+				var parent = card.TokenParents.First();
+				if (parent.SubCard is WikiSpell spell)
+				{
+					stinger += $"  It is spawned when [[{parent.Name}]] is played.";
+				}
+				else
+				{
+					var ability = parent.SubCard as WikiAbility;
+					stinger += $"  It is spawned when the [[{ability.Name}]] ability of [[{ability.Parent.Name}]] is activated.";
+				}
+				
 			}
 			return stinger;
 		}
@@ -222,6 +262,11 @@ namespace Artificer
 					article.AddSection("Card Spawned", GetCardReference(cardSpawned));
 				}
 			}
+			else
+			{
+				article.AddSection("Ability", $"{{{{{TypeTemplate}|{Card.Name}}}}} has no abilities.");
+			}
+
 			if (SubCard.SignatureCard != null)
 			{
 				article.AddSection("Signature Card", GetCardReference(SubCard.SignatureCard));
@@ -334,7 +379,7 @@ namespace Artificer
 			article.SubcardInfobox += $@"{{{{Improvement Infobox
 | ID = {Card.ID}
 | Name = {Card.Name}
-| CardSpawned = {SubCard.CardSpawned}
+| CardSpawned = {SubCard.CardSpawned?.ID}
 | ManaCost = {SubCard.ManaCost}
 | Charges = {SubCard.Charges}
 | IsCrosslane = {SubCard.IsCrosslane}}}}}";
@@ -394,7 +439,7 @@ namespace Artificer
 			article.SubcardInfobox += $@"{{{{Spell Infobox
 | ID = {Card.ID}
 | Name = {Card.Name}
-| CardSpawned = {SubCard.CardSpawned}
+| CardSpawned = {SubCard.CardSpawned?.ID}
 | ManaCost = {SubCard.ManaCost}
 | Charges = {SubCard.Charges}
 | IsCrosslane = {SubCard.IsCrosslane}}}}}";
