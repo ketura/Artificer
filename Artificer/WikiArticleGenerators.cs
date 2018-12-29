@@ -67,7 +67,7 @@ namespace Artificer
 
 		public static string GetStinger(string template, WikiCard card, string setname)
 		{
-			string stinger = $"{{{{{template}|{card.Name}}}}} is a{(card.Color == ArtifactColor.None ? " " : $" {card.Color.ToString()} ")}[[{card.CardType}]] in the [[{setname}]] set.";
+			string stinger = $"{{{{{template}|{card.Name}}}}} is a{(card.Color == ArtifactColor.None ? " " : $" [[{card.Color.ToString()}]] ")}[[{card.CardType}]] in the [[{setname}]] set.";
 			if(card.SignatureParent != null)
 			{
 				stinger += $"  It is the [[Signature Card]] of [[{card.SignatureParent.Name}]].";
@@ -556,7 +556,7 @@ namespace Artificer
 			{
 				article.AddSection("Ability", GetAbilityInfoboxes(Card.Abilities.Values));
 
-				if(Card.Abilities.Any(x => x.Value.CardSpawned != null))
+				if (Card.Abilities.Any(x => x.Value.CardSpawned != null))
 				{
 					var cardSpawned = Card.Abilities.Where(x => x.Value.CardSpawned != null).Select(x => x.Value.CardSpawned).First();
 					article.AddSection("Card Spawned", GetCardReference(cardSpawned));
@@ -585,5 +585,7 @@ namespace Artificer
 
 		public ItemArticleGenerator(WikiCard card) : base(card, ArtifactCardType.Item, "I") { }
 	}
+
+	
 
 }

@@ -67,7 +67,7 @@ namespace Artificer
 							break;
 
 						case "combine":
-
+							artificer.CombineWikiArticles();
 							break;
 
 						case "upload":

@@ -42,6 +42,18 @@ namespace Artificer
 		public ValveAPIResponseCollection ValveData { get; set; }
 		public Dictionary<int, WikiSet> Sets { get; set; }
 		public Dictionary<int, WikiCard> Cards { get; set; }
+		public List<WikiCard> ValidCards
+		{
+			get
+			{
+				return Cards.Where(x => x.Value.CardType != ArtifactCardType.Ability
+																 && x.Value.CardType != ArtifactCardType.PassiveAbility
+																 && x.Value.CardType != ArtifactCardType.Stronghold
+																 && x.Value.CardType != ArtifactCardType.Pathing)
+														.Select(x => x.Value).ToList();
+			}
+		}
+		
 		
 		public CardTextCollection GameFileInfo { get; set; }
 		public Dictionary<string, int> VOMapping { get; set; }
@@ -863,11 +875,7 @@ namespace Artificer
 				Directory.CreateDirectory(basepath);
 			}
 
-			var titles = Cards.Where(x => x.Value.CardType != ArtifactCardType.Ability
-																 && x.Value.CardType != ArtifactCardType.PassiveAbility
-																 && x.Value.CardType != ArtifactCardType.Stronghold
-																 && x.Value.CardType != ArtifactCardType.Pathing)
-				.Select(x => x.Value.Name);
+			var titles = ValidCards.Select(x => x.Name);
 
 			var lore = titles.Select(x => $"{x}/Lore");
 			var audio = titles.Select(x => $"{x}/Audio");
@@ -912,12 +920,6 @@ namespace Artificer
 		{
 			AssertGameFileInfo();
 
-			var validCards = Cards.Where(x => x.Value.CardType != ArtifactCardType.Ability
-																 && x.Value.CardType != ArtifactCardType.PassiveAbility
-																 && x.Value.CardType != ArtifactCardType.Stronghold
-																 && x.Value.CardType != ArtifactCardType.Pathing)
-														.Select(x => x.Value);
-
 			var basepath = Path.GetFullPath(Path.Combine(fileLocation, "New_Articles"));
 			if(Directory.Exists(basepath))
 			{
@@ -929,7 +931,7 @@ namespace Artificer
 				Directory.CreateDirectory(basepath);
 			}
 
-			foreach (var card in validCards)
+			foreach (var card in ValidCards)
 			{
 				GenerateArticle(card, Path.Combine(basepath, card.Name));				
 			}
@@ -977,6 +979,91 @@ namespace Artificer
 			// - items have no text?? might be subsumed in abilities
 
 			return null;
+		}
+
+		public void CombineWikiArticles()
+		{
+			CombineWikiArticles(_config.ArticleLocation);
+		}
+
+		public void CombineWikiArticles(string fileLocation)
+		{
+			AssertGameFileInfo();
+
+			string existingPath = Path.Combine(fileLocation, "Existing_Articles");
+			string newPath = Path.Combine(fileLocation, "New_Articles");
+			string combinedPath = Path.Combine(fileLocation, "Combined_Articles");
+
+			if (!Directory.Exists(existingPath))
+			{
+				DownloadCardArticles();
+			}
+
+			if (!Directory.Exists(newPath))
+			{
+				GenerateWikiArticles();
+			}
+
+			if (Directory.Exists(combinedPath))
+			{
+				Directory.Delete(combinedPath, true);
+			} //Holy shit why am i still having the dir disappear
+			Thread.Sleep(50);
+			while (!Directory.Exists(combinedPath))
+			{
+				Directory.CreateDirectory(combinedPath);
+			}
+
+			List<string> articles = new List<string>();
+			List<string> lores = new List<string>();
+			List<string> responses = new List<string>();
+
+
+			foreach(var card in ValidCards)
+			{
+				string title = card.Name;
+				string loreTitle = $"{title}_Lore.txt";
+				string responseTitle = $"{title}_Audio.txt";
+				title += ".txt";
+
+				string titlePath = Path.Combine(existingPath, title);
+				string lorePath = Path.Combine(existingPath, loreTitle);
+				string responsePath = Path.Combine(existingPath, responseTitle);
+
+				if (File.Exists(titlePath))
+				{
+					string original = File.ReadAllText(titlePath);
+					var heroarticle = new OldExistingArticleParser(card, title, original);
+					string newArticle = heroarticle.GenerateArticleText();
+					string remains = heroarticle.CurrentArticle;
+
+					File.WriteAllText(Path.Combine(combinedPath, title), newArticle);
+
+					if(!String.IsNullOrWhiteSpace(remains))
+					{
+						File.WriteAllText(Path.Combine(combinedPath, title.Replace(".txt", "") + "_remains.txt"), remains);
+					}
+					
+				}
+
+				if (File.Exists(lorePath))
+				{
+					string original = File.ReadAllText(lorePath);
+					var article = new ExistingLoreArticleParser(card, loreTitle, original);
+					string newArticle = article.GenerateArticleText();
+					File.WriteAllText(Path.Combine(combinedPath, loreTitle), newArticle);
+				}
+
+				if (File.Exists(responsePath))
+				{
+					string original = File.ReadAllText(responsePath);
+					var article = new ExistingResponseArticleParser(card, responseTitle, original);
+					string newArticle = article.GenerateArticleText();
+					File.WriteAllText(Path.Combine(combinedPath, responseTitle), newArticle);
+				}
+
+				
+			}
 		}
 
 	}

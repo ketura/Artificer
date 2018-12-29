@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Artificer
 {
@@ -42,7 +43,7 @@ namespace Artificer
 
 		public string GenerateNewArticle()
 		{
-			return $@"{TabTemplate}
+			string result = $@"{TabTemplate}
 {CardInfobox}
 {SubcardInfobox}
 
@@ -52,6 +53,8 @@ namespace Artificer
 
 {GenerateCategories(Categories)}
 ";
+			result = result.Replace("\r", "");
+			return Regex.Replace(result, @"\n\n\n+", "\n\n\n").Trim();
 		}
 
 		protected static string GenerateSection(string header, string body)
@@ -101,7 +104,7 @@ namespace Artificer
 		protected abstract void AddCardStinger(WikiArticle article);
 		protected abstract void AddSections(WikiArticle article);
 		protected abstract void AddCategories(WikiArticle article);
-		protected virtual string Finalize(WikiArticle article, string result) { return result.Replace("\r", ""); }
+		protected virtual string Finalize(WikiArticle article, string result) { return result; }
 
 		public string GenerateArticleText()
 		{
