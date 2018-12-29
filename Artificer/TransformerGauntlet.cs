@@ -94,22 +94,24 @@ namespace Artificer
 
 			gauntlet.AddSingle(new ThisCardNameSubstitution());
 			gauntlet.AddSingle(new ParentCardNameSubstitution());
-			gauntlet.AddSingle(new FindAbilityCooldown());
+			gauntlet.AddSetup(new FindAbilityCooldown());
 
-			gauntlet.AddSingle(new SimpleTextSubstitution(@"\[g:608\[&#9633;]]", "[Pulse]"));
-			gauntlet.AddSingle(new SimpleTextSubstitution(@"\[\[g:604\[&#9634; Get initiative]]", "Get initiative"));
-			gauntlet.AddSingle(new SimpleTextSubstitution(@"\[g:\d+\[(.*?)]]", "$1"));
-			gauntlet.AddSingle(new SimpleTextSubstitution(@"\[activatedability\[\[color:ability\[Active &#9632;(\d):]]", "[Cooldown: $1]"));
-			gauntlet.AddSingle(new SimpleTextSubstitution(@"\[\[(.*?)]]", "$1"));
-			gauntlet.AddSingle(new SimpleTextSubstitution(@"<BR/>\\n", "<br/>"));
-			gauntlet.AddSingle(new SimpleTextSubstitution(@"<br/>", "<br/>"));
+			gauntlet.AddSetup(new SimpleTextSubstitution(@"\[g:608\[&#9633;]]", "[Pulse]"));
+			gauntlet.AddSetup(new SimpleTextSubstitution(@"\[\[g:604\[&#9634; Get initiative]]", "Get initiative"));
+			gauntlet.AddSetup(new SimpleTextSubstitution(@"\[g:\d+\[(.*?)]]", "$1"));
+			gauntlet.AddSetup(new SimpleTextSubstitution(@"\[abilityname\[.*?]]", ""));
+			gauntlet.AddSetup(new SimpleTextSubstitution(@"\[activatedability\[\[color:ability\[Active &#9632;(\d):]]", "[Cooldown: $1]"));
+			gauntlet.AddSetup(new SimpleTextSubstitution(@"\[\[(.*?)]]", "$1"));
+			gauntlet.AddSetup(new SimpleTextSubstitution(@"<BR/>\\n", "<br/>"));
+			gauntlet.AddSetup(new SimpleTextSubstitution(@"<br/>", "<br/>"));
 
-			gauntlet.AddSingle(new SimpleTextWikiSubstitution(@"\[g:608\[&#9633;]]", "[[Pulse]]"));
-			gauntlet.AddSingle(new SimpleTextWikiSubstitution(@"\[\[g:604\[&#9634; Get initiative]]", "[[Get Initiative]]"));
-			gauntlet.AddSingle(new SimpleTextWikiSubstitution(@"\[abilityname\[.*?]]", ""));
-			gauntlet.AddSingle(new SimpleTextWikiSubstitution(@"\[g:\d+\[(.*?)]]", "[[$1]]"));
-			gauntlet.AddSingle(new SimpleTextWikiSubstitution(@"<BR/>\\n", "<br/>"));
-			gauntlet.AddSingle(new SimpleTextWikiSubstitution(@"<br/>", "<br/>"));
+			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[g:608\[&#9633;]]", "[[Pulse]]"));
+			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[\[g:604\[&#9634; Get initiative]]", "[[Get Initiative]]"));
+			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[g:\d+\[(.*?)]]", "[[$1]]"));
+			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[abilityname\[.*?]]", ""));
+			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[activatedability\[\[color:ability\[Active &#9632;(\d):]]", "[[Cooldown]]: $1."));
+			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"<BR/>\\n", "<br/>"));
+			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"<br/>", "<br/>"));
 
 			gauntlet.AddSingle(new SimpleLoreSubstitution(@"<i>(.*?)</i>", "$1"));
 			gauntlet.AddSingle(new SimpleLoreWikiSubstitution(@"<i>(.*?)</i>", "''$1''"));

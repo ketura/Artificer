@@ -67,35 +67,47 @@ namespace Artificer
 
 		public static string GetStinger(string template, WikiCard card, string setname)
 		{
-			string stinger = $"{{{{{template}|{card.Name}}}}} is a {(card.Color == ArtifactColor.None ? " " : card.Color.ToString() + " ")}[[{card.CardType}]] in the [[{setname}]] set.";
+			string stinger = $"{{{{{template}|{card.Name}}}}} is a{(card.Color == ArtifactColor.None ? " " : $" {card.Color.ToString()} ")}[[{card.CardType}]] in the [[{setname}]] set.";
 			if(card.SignatureParent != null)
 			{
-				stinger += $"  It is the [[Signature Card]] of the [[hero]] [[{card.SignatureParent.Name}]].";
+				stinger += $"  It is the [[Signature Card]] of [[{card.SignatureParent.Name}]].";
 			}
 			else if (card.TokenParents.Count > 1)
 			{
 				var spellParents = card.TokenParents.Where(x => x.SubCard is WikiSpell);
-				var abilityParents = card.TokenParents.Where(x => x.SubCard is WikiAbility);
+				var abilityParents = card.TokenParents.Where(x => x.SubCard is WikiAbility).Select(x => (x.SubCard as WikiAbility).Parent);
 
 				if (spellParents.Count() > 0 && abilityParents.Count() > 0)
 				{
-					string spellList = String.Join(", ", spellParents.Select(x => $"[[{x.Name}]]"), 0, spellParents.Count() - 1);
-					spellList += $" or {spellParents.Last().Name}";
-					string abilityList = String.Join(", ", abilityParents.Select(x => $"[[{x.Name}]]"), 0, abilityParents.Count() - 1);
-					abilityList += $" or {abilityParents.Last().Name}";
-					stinger += $"  It is spawned when {spellList} is played, or when the ability of {abilityList} is activated.";
+					string spellList = "";
+					if (spellParents.Count() > 1)
+					{
+						spellList = String.Join(", ", spellParents.Select(x => $"[[{x.Name}]]").ToArray(), 0, spellParents.Count() - 1);
+						spellList += $" or ";
+					}
+					spellList += $"[[{spellParents.Last().Name}]]";
+
+					string abilityList = "";
+					if (abilityParents.Count() > 1)
+					{
+						abilityList = String.Join(", ", abilityParents.Select(x => $"[[{x.Name}]]").ToArray(), 0, abilityParents.Count() - 1);
+						abilityList += $" or ";
+					}
+					abilityList += $"[[{abilityParents.Last().Name}]]";
+
+					stinger += $"  It is [[Summon|summoned]] when {spellList} is played, or when the ability of {abilityList} is activated.";
 				}
 				else if (spellParents.Count() > 0 && abilityParents.Count() == 0)
 				{
 					string list = String.Join(", ", spellParents.Select(x => $"[[{x.Name}]]"), 0, spellParents.Count() - 1);
 					list += $" or {spellParents.Last().Name}";
-					stinger += $"  It is spawned when {list} is played.";
+					stinger += $"  It is [[Summon|summoned]] when {list} is played.";
 				}
 				if (spellParents.Count() == 0 && abilityParents.Count() > 0)
 				{
 					string list = String.Join(", ", abilityParents.Select(x => $"[[{x.Name}]]"), 0, abilityParents.Count() - 1);
 					list += $" or {abilityParents.Last().Name}";
-					stinger += $"  It is spawned when the ability of {list} is activated.";
+					stinger += $"  It is [[Summon|summoned]] when the ability of {list} is activated.";
 				}
 			}
 			else if (card.TokenParents.Count > 0)
@@ -103,12 +115,20 @@ namespace Artificer
 				var parent = card.TokenParents.First();
 				if (parent.SubCard is WikiSpell spell)
 				{
-					stinger += $"  It is spawned when [[{parent.Name}]] is played.";
+					stinger += $"  It is [[Summon|summoned]] when [[{parent.Name}]] is played.";
 				}
 				else
 				{
 					var ability = parent.SubCard as WikiAbility;
-					stinger += $"  It is spawned when the [[{ability.Name}]] ability of [[{ability.Parent.Name}]] is activated.";
+					if(ability.Name == ability.Parent.Name)
+					{
+						stinger += $"  It is [[Summon|summoned]] when the ability of [[{ability.Parent.Name}]] is activated.";
+					}
+					else
+					{
+						stinger += $"  It is [[Summon|summoned]] when the [[{ability.Name}]] ability of [[{ability.Parent.Name}]] is activated.";
+					}
+					
 				}
 				
 			}

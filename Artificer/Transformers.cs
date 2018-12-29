@@ -273,16 +273,24 @@ namespace Artificer
 						card.Abilities[ability.ID] = ability;
 					}
 
-					if(card.CardType == ArtifactCardType.Ability || card.CardType == ArtifactCardType.PassiveAbility)
+					if (card.Text.Contains($"ummon a {pair.Value.Card.Name}"))
 					{
-						var ability = card.SubCard as WikiAbility;
-						if(card.Text.Contains($"ummon a {pair.Value.Card.Name}"))
+						if (card.CardType == ArtifactCardType.Ability || card.CardType == ArtifactCardType.PassiveAbility)
 						{
+							var ability = card.SubCard as WikiAbility;
+
 							ability.CardSpawned = pair.Value.Card;
 							ability.CardSpawnedID = pair.Key;
 						}
+						else if(card.CardType == ArtifactCardType.Spell || card.CardType == ArtifactCardType.Improvement)
+						{
+							var spell = card.SubCard as WikiSpell;
+							spell.CardSpawned = pair.Value.Card;
+						}
 						
 					}
+
+					
 				}
 			}
 

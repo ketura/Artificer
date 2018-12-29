@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -60,6 +61,7 @@ namespace Artificer
 		}
 	}
 
+	[DebuggerDisplay("WikiCard {ID}({Name}), {CardType}/{SubType}")]
 	public class WikiCard
 	{
 		public static List<int> NonCollectableIDs { get; } = new List<int>()
