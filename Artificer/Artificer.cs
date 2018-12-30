@@ -53,8 +53,15 @@ namespace Artificer
 														.Select(x => x.Value).ToList();
 			}
 		}
-		
-		
+
+		public Dictionary<string, WikiArticle> GeneratedCardArticles { get; set; }
+		public Dictionary<string, WikiArticle> GeneratedLoreArticles { get; set; }
+		public Dictionary<string, WikiArticle> GeneratedAudioArticles { get; set; }
+
+		public Dictionary<string, WikiArticle> ParsedCardArticles { get; set; }
+		public Dictionary<string, WikiArticle> ParsedLoreArticles { get; set; }
+		public Dictionary<string, WikiArticle> ParsedAudioArticles { get; set; }
+
 		public CardTextCollection GameFileInfo { get; set; }
 		public Dictionary<string, int> VOMapping { get; set; }
 
@@ -920,6 +927,10 @@ namespace Artificer
 		{
 			AssertGameFileInfo();
 
+			GeneratedCardArticles = new Dictionary<string, WikiArticle>();
+			GeneratedLoreArticles = new Dictionary<string, WikiArticle>();
+			GeneratedAudioArticles = new Dictionary<string, WikiArticle>();
+
 			var basepath = Path.GetFullPath(Path.Combine(fileLocation, "New_Articles"));
 			if(Directory.Exists(basepath))
 			{
@@ -939,44 +950,38 @@ namespace Artificer
 
 		public Dictionary<string, string> GenerateArticle(WikiCard card, string basefile)
 		{
-			string newArticle = null;
+
+			WikiArticleGenerator CardArticleGenerator = null;
+
 			switch (card.CardType)
 			{
 				case ArtifactCardType.Hero:
-					newArticle = new HeroArticleGenerator(card).GenerateArticleText();
+					CardArticleGenerator = new HeroArticleGenerator(card);
 					break;
 				case ArtifactCardType.Creep:
-					newArticle = new CreepArticleGenerator(card).GenerateArticleText();
+					CardArticleGenerator = new CreepArticleGenerator(card);
 					break;
 				case ArtifactCardType.Improvement:
-					newArticle = new ImprovementArticleGenerator(card).GenerateArticleText();
+					CardArticleGenerator = new ImprovementArticleGenerator(card);
 					break;
 				case ArtifactCardType.Spell:
-					newArticle = new SpellArticleGenerator(card).GenerateArticleText();
+					CardArticleGenerator = new SpellArticleGenerator(card);
 					break;
 				case ArtifactCardType.Item:
-					newArticle = new ItemArticleGenerator(card).GenerateArticleText();
-					break;
-				case ArtifactCardType.Stronghold:
-				case ArtifactCardType.Pathing:
-				case ArtifactCardType.Ability:
-				case ArtifactCardType.PassiveAbility:
-				default:
-					newArticle = null;
+					CardArticleGenerator = new ItemArticleGenerator(card);
 					break;
 			}
 
-			string loreArticle = new LoreArticleGenerator(card).GenerateArticleText();
-			string audioArticle = new ResponseArticleGenerator(card).GenerateArticleText();
+			WikiArticleGenerator LoreArticleGenerator = new LoreArticleGenerator(card);
+			WikiArticleGenerator AudioArticleGenerator = new ResponseArticleGenerator(card);
 
+			GeneratedCardArticles[card.Name] = CardArticleGenerator.GenerateArticle();
+			GeneratedLoreArticles[card.Name] = LoreArticleGenerator.GenerateArticle();
+			GeneratedAudioArticles[card.Name] = AudioArticleGenerator.GenerateArticle();
 
-
-			File.WriteAllText($"{Path.GetFullPath(basefile)}.txt", newArticle);
-			File.WriteAllText($"{Path.GetFullPath(basefile)}_Lore.txt", loreArticle);
-			File.WriteAllText($"{Path.GetFullPath(basefile)}_Audio.txt", audioArticle);
-
-			// - items no color, items need subtype in categories
-			// - items have no text?? might be subsumed in abilities
+			File.WriteAllText($"{Path.GetFullPath(basefile)}.txt", CardArticleGenerator.GenerateArticleText(GeneratedCardArticles[card.Name]));
+			File.WriteAllText($"{Path.GetFullPath(basefile)}_Lore.txt", LoreArticleGenerator.GenerateArticleText(GeneratedLoreArticles[card.Name]));
+			File.WriteAllText($"{Path.GetFullPath(basefile)}_Audio.txt", AudioArticleGenerator.GenerateArticleText(GeneratedAudioArticles[card.Name]));
 
 			return null;
 		}
@@ -984,6 +989,46 @@ namespace Artificer
 		public void CombineWikiArticles()
 		{
 			CombineWikiArticles(_config.ArticleLocation);
+		}
+
+		public void ParseExistingWikiArticles(string existingPath)
+		{
+			ParsedCardArticles = new Dictionary<string, WikiArticle>();
+			ParsedLoreArticles = new Dictionary<string, WikiArticle>();
+			ParsedAudioArticles = new Dictionary<string, WikiArticle>();
+
+			foreach (var card in ValidCards)
+			{
+				string title = card.Name;
+				string loreTitle = $"{title}_Lore.txt";
+				string responseTitle = $"{title}_Audio.txt";
+				title += ".txt";
+
+				string titlePath = Path.Combine(existingPath, title);
+				string lorePath = Path.Combine(existingPath, loreTitle);
+				string responsePath = Path.Combine(existingPath, responseTitle);
+
+				if (File.Exists(titlePath))
+				{
+					string original = File.ReadAllText(titlePath);
+					var parser = new OldExistingArticleParser(card, title, original);
+					ParsedCardArticles[card.Name] = parser.GenerateArticle();
+				}
+
+				if (File.Exists(lorePath))
+				{
+					string original = File.ReadAllText(lorePath);
+					var parser = new ExistingLoreArticleParser(card, loreTitle, original);
+					ParsedLoreArticles[card.Name] = parser.GenerateArticle();
+				}
+
+				if (File.Exists(responsePath))
+				{
+					string original = File.ReadAllText(responsePath);
+					var parser = new ExistingResponseArticleParser(card, responseTitle, original);
+					ParsedAudioArticles[card.Name] = parser.GenerateArticle();
+				}
+			}
 		}
 
 		public void CombineWikiArticles(string fileLocation)
@@ -999,10 +1044,7 @@ namespace Artificer
 				DownloadCardArticles();
 			}
 
-			if (!Directory.Exists(newPath))
-			{
-				GenerateWikiArticles();
-			}
+			GenerateWikiArticles();
 
 			if (Directory.Exists(combinedPath))
 			{
@@ -1014,55 +1056,20 @@ namespace Artificer
 				Directory.CreateDirectory(combinedPath);
 			}
 
-			List<string> articles = new List<string>();
-			List<string> lores = new List<string>();
-			List<string> responses = new List<string>();
+			ParseExistingWikiArticles(existingPath);
 
+			var validCardNames = ValidCards.Select(x => x.Name);
 
 			foreach(var card in ValidCards)
 			{
-				string title = card.Name;
-				string loreTitle = $"{title}_Lore.txt";
-				string responseTitle = $"{title}_Audio.txt";
-				title += ".txt";
+				WikiArticle generated = GeneratedCardArticles[card.Name];
+				ParsedCardArticles.TryGetValue(card.Name, out WikiArticle parsed);
 
-				string titlePath = Path.Combine(existingPath, title);
-				string lorePath = Path.Combine(existingPath, loreTitle);
-				string responsePath = Path.Combine(existingPath, responseTitle);
+				OldArticleCombiner combiner = new OldArticleCombiner(card);
+				var result = combiner.CombineArticles(parsed, generated);
 
-				if (File.Exists(titlePath))
-				{
-					string original = File.ReadAllText(titlePath);
-					var heroarticle = new OldExistingArticleParser(card, title, original);
-					string newArticle = heroarticle.GenerateArticleText();
-					string remains = heroarticle.CurrentArticle;
+				File.WriteAllText(Path.Combine(combinedPath, $"{card.Name}.txt"), result.GenerateNewArticle(card));
 
-					File.WriteAllText(Path.Combine(combinedPath, title), newArticle);
-
-					if(!String.IsNullOrWhiteSpace(remains))
-					{
-						File.WriteAllText(Path.Combine(combinedPath, title.Replace(".txt", "") + "_remains.txt"), remains);
-					}
-					
-				}
-
-				if (File.Exists(lorePath))
-				{
-					string original = File.ReadAllText(lorePath);
-					var article = new ExistingLoreArticleParser(card, loreTitle, original);
-					string newArticle = article.GenerateArticleText();
-					File.WriteAllText(Path.Combine(combinedPath, loreTitle), newArticle);
-				}
-
-				if (File.Exists(responsePath))
-				{
-					string original = File.ReadAllText(responsePath);
-					var article = new ExistingResponseArticleParser(card, responseTitle, original);
-					string newArticle = article.GenerateArticleText();
-					File.WriteAllText(Path.Combine(combinedPath, responseTitle), newArticle);
-				}
-
-				
 			}
 		}
 

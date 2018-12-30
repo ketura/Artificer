@@ -289,8 +289,6 @@ namespace Artificer
 						}
 						
 					}
-
-					
 				}
 			}
 
@@ -321,7 +319,7 @@ namespace Artificer
 				if (card.CardType == ArtifactCardType.Ability ||
 						card.CardType == ArtifactCardType.PassiveAbility)
 				{
-					
+
 					var ability = card.SubCard as WikiAbility;
 					if (ability.CardSpawned != null)
 					{
@@ -342,6 +340,22 @@ namespace Artificer
 			}
 
 			protected override void TransformSingle(WikiCard card) { }
+		}
+
+		public class SetAbilityText : CardCollectionTransformer
+		{
+			protected override void TransformChildren(IDictionary<int, WikiCard> cards, WikiCard card) { }
+
+			protected override void TransformSingle(WikiCard card)
+			{
+				if(card.CardType == ArtifactCardType.Ability ||
+						card.CardType == ArtifactCardType.PassiveAbility)
+				{
+					var ability = card.SubCard as WikiAbility;
+					ability.Text = card.Text;
+					ability.TextFormatted = card.TextFormatted;
+				}
+			}
 		}
 
 		public class SetIsCollectable : CardCollectionTransformer

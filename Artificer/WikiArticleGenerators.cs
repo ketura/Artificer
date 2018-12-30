@@ -67,7 +67,7 @@ namespace Artificer
 
 		public static string GetStinger(string template, WikiCard card, string setname)
 		{
-			string stinger = $"{{{{{template}|{card.Name}}}}} is a{(card.Color == ArtifactColor.None ? " " : $" [[{card.Color.ToString()}]] ")}[[{card.CardType}]] in the [[{setname}]] set.";
+			string stinger = $"{{{{{template}|{card.Name}}}}} is a{(card.Color == ArtifactColor.None ? " " : $" {{{{{card.Color.ToString()}}}}} ")}[[{card.CardType}]] in the [[{setname}]] set.";
 			if(card.SignatureParent != null)
 			{
 				stinger += $"  It is the [[Signature Card]] of [[{card.SignatureParent.Name}]].";
@@ -140,15 +140,46 @@ namespace Artificer
 			string result = "";
 			foreach(var ability in abilities)
 			{
-				result += $@"{{{{Card Infobox
+				result += $@"{{{{Ability Infobox
 | ID = {ability.ID}
 | Name = {ability.Name}
 | CardID = {ability.ParentID}
 | AbilityType = {ability.AbilityType}
+| Text = {ability.Text}
+| TextFormatted = {ability.TextFormatted}
 | Charges = {ability.Charges}
 | Cooldown = {ability.Cooldown}}}}}
 ";
 			}
+			return result;
+		}
+
+		public static Dictionary<ArtifactCardType, string> TemplateAbbr = new Dictionary<ArtifactCardType, string>()
+		{
+			{ ArtifactCardType.Hero, "H" },
+			{ ArtifactCardType.Creep, "C" },
+			{ ArtifactCardType.Improvement, "Im" },
+			{ ArtifactCardType.Spell, "S" },
+			{ ArtifactCardType.Item, "I" }
+		};
+
+
+		public static string GetTokenParents(WikiCard card)
+		{
+			string result = "";
+			foreach(var parent in card.TokenParents)
+			{
+				if(parent.CardType == ArtifactCardType.Ability || parent.CardType == ArtifactCardType.PassiveAbility)
+				{
+					var ability = parent.SubCard as WikiAbility;
+					result += $"* {{{{{TemplateAbbr[ability.Parent.CardType]}|{ability.Parent.Name}}}}}\n";
+				}
+				else
+				{
+					result += $"* {{{{{TemplateAbbr[parent.CardType]}|{parent.Name}}}}}\n";
+				}
+			}
+
 			return result;
 		}
 
@@ -195,12 +226,6 @@ namespace Artificer
 			article.Categories.Add("Lore");
 		}
 
-		protected override string Finalize(WikiArticle article, string result)
-		{
-			result = result.Replace("\r", "");
-			return Regex.Replace(result, @"\n\n+", "\n\n");
-		}
-
 		public LoreArticleGenerator(WikiCard card) : base(card, card.CardType) { }
 	}
 
@@ -212,6 +237,7 @@ namespace Artificer
 		}
 		protected override void AddTabTemplate(WikiArticle article)
 		{
+			article.Finalizer = Finalize;
 			article.TabTemplate = GetTabTemplate(Card.CardType);
 		}
 
@@ -234,12 +260,11 @@ namespace Artificer
 			article.Categories.Add("Responses");
 		}
 
-		protected override string Finalize(WikiArticle article, string result)
+		protected string Finalize(WikiCard card, string result)
 		{
-			result = result.Replace("\r", "");
-			if (Card.VoiceOverLines.Count == 0)
+			if (card.VoiceOverLines.Count == 0)
 			{
-				return GetEmptyResponseArticle(Card);
+				return GetEmptyResponseArticle(card);
 			}
 
 			return Regex.Replace(result, @"\n\n+", "\n\n");
@@ -288,7 +313,7 @@ namespace Artificer
 				if (Card.Abilities.Any(x => x.Value.CardSpawned != null))
 				{
 					var cardSpawned = Card.Abilities.Where(x => x.Value.CardSpawned != null).Select(x => x.Value.CardSpawned).First();
-					article.AddSection("Card Spawned", GetCardReference(cardSpawned));
+					article.AddSection("Card Summoned", GetCardReference(cardSpawned));
 				}
 			}
 			else
@@ -296,10 +321,17 @@ namespace Artificer
 				article.AddSection("Ability", $"{{{{{TypeTemplate}|{Card.Name}}}}} has no abilities.");
 			}
 
+
 			if (SubCard.SignatureCard != null)
 			{
 				article.AddSection("Signature Card", GetCardReference(SubCard.SignatureCard));
 			}
+
+			if (Card.TokenParents.Count > 0)
+			{
+				article.AddSection("Summoned By", GetTokenParents(Card));
+			}
+
 			article.AddSection("Miscellaneous", GetIllustrator(Card));
 		}
 
@@ -312,11 +344,6 @@ namespace Artificer
 				Card.Rarity.ToString(),
 				Sets[Card.SetID].Name
 			};
-		}
-
-		protected override string Finalize(WikiArticle article, string result)
-		{
-			return base.Finalize(article, result);
 		}
 
 		public HeroArticleGenerator(WikiCard card) : base(card, ArtifactCardType.Hero, "H") { }
@@ -358,6 +385,11 @@ namespace Artificer
 				article.AddSection("Card Text", Card.TextFormatted);
 			}
 
+			if(Card.TokenParents.Count > 0)
+			{
+				article.AddSection("Summoned By", GetTokenParents(Card));
+			}
+
 			if(Card.Abilities.Count > 0)
 			{
 				article.AddSection("Ability", GetAbilityInfoboxes(Card.Abilities.Values));
@@ -365,7 +397,7 @@ namespace Artificer
 				if (Card.Abilities.Any(x => x.Value.CardSpawned != null))
 				{
 					var cardSpawned = Card.Abilities.Where(x => x.Value.CardSpawned != null).Select(x => x.Value.CardSpawned).First();
-					article.AddSection("Card Spawned", GetCardReference(cardSpawned));
+					article.AddSection("Card Summoned", GetCardReference(cardSpawned));
 				}
 			}
 
@@ -381,11 +413,6 @@ namespace Artificer
 				Card.Rarity.ToString(),
 				Sets[Card.SetID].Name
 			};
-		}
-
-		protected override string Finalize(WikiArticle article, string result)
-		{
-			return base.Finalize(article, result);
 		}
 
 		public CreepArticleGenerator(WikiCard card) : base(card, ArtifactCardType.Creep, "C") { }
@@ -427,7 +454,7 @@ namespace Artificer
 			}
 			if (SubCard.CardSpawned != null)
 			{
-				article.AddSection("Card Spawned", GetCardReference(SubCard.CardSpawned));
+				article.AddSection("Card Summoned", GetCardReference(SubCard.CardSpawned));
 			}
 			article.AddSection("Miscellaneous", GetIllustrator(Card));
 		}
@@ -441,11 +468,6 @@ namespace Artificer
 				Card.Rarity.ToString(),
 				Sets[Card.SetID].Name
 			};
-		}
-
-		protected override string Finalize(WikiArticle article, string result)
-		{
-			return base.Finalize(article, result);
 		}
 
 		public ImprovementArticleGenerator(WikiCard card) : base(card, ArtifactCardType.Improvement, "Im") { }
@@ -487,7 +509,7 @@ namespace Artificer
 			}
 			if (SubCard.CardSpawned != null)
 			{
-				article.AddSection("Card Spawned", GetCardReference(SubCard.CardSpawned));
+				article.AddSection("Card Summoned", GetCardReference(SubCard.CardSpawned));
 			}
 			article.AddSection("Miscellaneous", GetIllustrator(Card));
 		}
@@ -501,11 +523,6 @@ namespace Artificer
 				Card.Rarity.ToString(),
 				Sets[Card.SetID].Name
 			};
-		}
-
-		protected override string Finalize(WikiArticle article, string result)
-		{
-			return base.Finalize(article, result);
 		}
 
 		public SpellArticleGenerator(WikiCard card) : base(card, ArtifactCardType.Spell, "S") { }
@@ -559,7 +576,7 @@ namespace Artificer
 				if (Card.Abilities.Any(x => x.Value.CardSpawned != null))
 				{
 					var cardSpawned = Card.Abilities.Where(x => x.Value.CardSpawned != null).Select(x => x.Value.CardSpawned).First();
-					article.AddSection("Card Spawned", GetCardReference(cardSpawned));
+					article.AddSection("Card Summoned", GetCardReference(cardSpawned));
 				}
 			}
 
@@ -576,11 +593,6 @@ namespace Artificer
 				Card.Rarity.ToString(),
 				Sets[Card.SetID].Name
 			};
-		}
-
-		protected override string Finalize(WikiArticle article, string result)
-		{
-			return base.Finalize(article, result);
 		}
 
 		public ItemArticleGenerator(WikiCard card) : base(card, ArtifactCardType.Item, "I") { }

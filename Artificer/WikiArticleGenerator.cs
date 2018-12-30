@@ -27,6 +27,8 @@ using System.Text.RegularExpressions;
 
 namespace Artificer
 {
+	public delegate string FinalizerFunction(WikiCard card, string article);
+
 	public class WikiArticle
 	{
 		public string TabTemplate { get; set; }
@@ -36,12 +38,14 @@ namespace Artificer
 		public List<KeyValuePair<string, string>> Sections { get; set; }
 		public List<string> Categories { get; set; }
 
+		public FinalizerFunction Finalizer { get; set; }
+
 		public void AddSection(string header, string body)
 		{
 			Sections.Add(new KeyValuePair<string, string>(header, body));
 		}
 
-		public string GenerateNewArticle()
+		public string GenerateNewArticle(WikiCard card)
 		{
 			string result = $@"{TabTemplate}
 {CardInfobox}
@@ -54,7 +58,14 @@ namespace Artificer
 {GenerateCategories(Categories)}
 ";
 			result = result.Replace("\r", "");
-			return Regex.Replace(result, @"\n\n\n+", "\n\n\n").Trim();
+			result = Regex.Replace(result, @"\n\n\n+", "\n\n\n").Trim();
+
+			if(Finalizer != null)
+			{
+				result = Finalizer(card, result);
+			}
+
+			return result;
 		}
 
 		protected static string GenerateSection(string header, string body)
@@ -104,9 +115,18 @@ namespace Artificer
 		protected abstract void AddCardStinger(WikiArticle article);
 		protected abstract void AddSections(WikiArticle article);
 		protected abstract void AddCategories(WikiArticle article);
-		protected virtual string Finalize(WikiArticle article, string result) { return result; }
 
-		public string GenerateArticleText()
+		public string GenerateArticleText(WikiArticle article = null)
+		{
+			if (article == null)
+			{
+				article = GenerateArticle();
+			}
+			string result = article.GenerateNewArticle(Card);
+			return result;
+		}
+
+		public WikiArticle GenerateArticle()
 		{
 			WikiArticle article = new WikiArticle();
 			AddTabTemplate(article);
@@ -115,9 +135,7 @@ namespace Artificer
 			AddCardStinger(article);
 			AddSections(article);
 			AddCategories(article);
-			string result = article.GenerateNewArticle();
-			result = Finalize(article, result);
-			return result;
+			return article;
 		}
 
 		protected WikiArticleGenerator(WikiCard card, ArtifactCardType type)
@@ -126,9 +144,7 @@ namespace Artificer
 			CardType = type;
 		}
 	}
-
 	
-
 	public abstract class WikiArticleGenerator<T> : WikiArticleGenerator
 		where T : WikiSubCard
 	{

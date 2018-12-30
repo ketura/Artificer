@@ -44,7 +44,19 @@ namespace Artificer
 	{
 		protected override void AddTabTemplate(WikiArticle article)
 		{
+			var match = Regex.Match(CurrentArticle, @"\{\{Tabs.*\n+");
+			if (match.Success)
+			{
+				article.TabTemplate = match.Value.Trim();
+				CurrentArticle = CurrentArticle.Replace(match.Value, "");
+			}
 
+			match = Regex.Match(CurrentArticle, @"\{\{unreleased content\}\}\n+");
+			if (match.Success)
+			{
+				article.TabTemplate += $"\n{match.Value.Trim()}";
+				CurrentArticle = CurrentArticle.Replace(match.Value, "");
+			}
 		}
 
 		protected override void AddCardInfobox(WikiArticle article)
@@ -59,22 +71,50 @@ namespace Artificer
 
 		protected override void AddCardStinger(WikiArticle article)
 		{
-
+			var match = Regex.Match(CurrentArticle, $@"(?s).*?{Card.Name}\}}?\}}? (is|are) .*?\n+(?=(\[\[Category|==))");
+			if (match.Success)
+			{
+				article.CardStinger = match.Value.Trim();
+				CurrentArticle = CurrentArticle.Replace(match.Value, "");
+			}
 		}
 
 		protected override void AddSections(WikiArticle article)
 		{
+			var match = Regex.Match(CurrentArticle, @"(?s)==+\s*Artifact\s*==+\s*\n+((\{\{.*?\}\}\n*)+)");
+			if (match.Success)
+			{
+				article.AddSection("Artifact", match.Groups[1].Value);
+				CurrentArticle = CurrentArticle.Replace(match.Value, "");
+			}
+			else
+			{
+				match = Regex.Match(CurrentArticle, @"(?s)==+\s*Artifact\s*==+\s*\n*");
+				if (match.Success)
+				{
+					article.AddSection("Artifact", "");
+					CurrentArticle = CurrentArticle.Replace(match.Value, "");
+				}
+			}
 
+			match = Regex.Match(CurrentArticle, @"(?s)==+\s*Dota 2\s*==+\s*\n+(\{\{.*?\}\})");
+			if (match.Success)
+			{
+				article.AddSection("Dota 2", match.Groups[1].Value);
+				CurrentArticle = CurrentArticle.Replace(match.Value, "");
+			}
+
+			match = Regex.Match(CurrentArticle, @"(?s)==+\s*Related Lore\s*==+\s*\n+((\{\{.*?\}\}\n*)+)");
+			if (match.Success)
+			{
+				article.AddSection("Related Lore", match.Groups[1].Value);
+				CurrentArticle = CurrentArticle.Replace(match.Value, "");
+			}
 		}
 
 		protected override void AddCategories(WikiArticle article)
 		{
 
-		}
-
-		protected override string Finalize(WikiArticle article, string result)
-		{
-			return base.Finalize(article, result);
 		}
 
 		public ExistingLoreArticleParser(WikiCard card, string articleName, string article) : base(card, articleName, article) { }
@@ -110,11 +150,6 @@ namespace Artificer
 		protected override void AddCategories(WikiArticle article)
 		{
 
-		}
-
-		protected override string Finalize(WikiArticle article, string result)
-		{
-			return base.Finalize(article, result);
 		}
 
 		public ExistingResponseArticleParser(WikiCard card, string articleName, string article) : base(card, articleName, article) { }
@@ -156,7 +191,7 @@ namespace Artificer
 
 		protected override void AddCardStinger(WikiArticle article)
 		{
-			var match = Regex.Match(CurrentArticle, $@"(?s)^.*?{Card.Name}\}}?\}}? (is|are) .*?\n+(?=(\[\[Category|==))");
+			var match = Regex.Match(CurrentArticle, $@"(?s)\{{?\{{?\w+\|{Card.Name}\}}?\}}? (is|are) .*?\n+(?=(\[\[Category|==))");
 			if (!match.Success)
 				return;
 
@@ -169,7 +204,7 @@ namespace Artificer
 			var match = Regex.Match(CurrentArticle, @"(?s)==+\s*(Ability|Abilities|Active)\s*==+\s*\n+(((\{\{Ability Infobox.*?\}\})\n+)+)");
 			if (match.Success)
 			{
-				article.AddSection(match.Groups[1].Value, match.Groups[2].Value);
+				article.AddSection("Ability", match.Groups[2].Value);
 				CurrentArticle = CurrentArticle.Replace(match.Value, "");
 			}
 			else
@@ -177,7 +212,7 @@ namespace Artificer
 				match = Regex.Match(CurrentArticle, @"(?s)==+\s*(Ability|Abilities|Active)\s*==+\s*\n+((.*?no.*?(abilities|ability|active).*?)|N/A)\n+");
 				if(match.Success)
 				{
-					article.AddSection(match.Groups[1].Value, match.Groups[2].Value);
+					article.AddSection("Ability", match.Groups[2].Value);
 					CurrentArticle = CurrentArticle.Replace(match.Value, "");
 				}
 				else
@@ -185,31 +220,24 @@ namespace Artificer
 					match = Regex.Match(CurrentArticle, @"(?s)==+\s*(Ability|Abilities|Active)\s*==+\n(?=(\[\[Category|==))");
 					if (match.Success)
 					{
-						article.AddSection(match.Groups[1].Value, match.Groups[2].Value);
+						article.AddSection("Ability", match.Groups[2].Value);
 						CurrentArticle = CurrentArticle.Replace(match.Value, "");
 					}
 				}
 				
 			}
 
-			match = Regex.Match(CurrentArticle, @"(?s)==+\s*Card\s*==+\s*\n+(\{\{Card/.*?\}\})\n+");
-			if (match.Success)
-			{
-				article.AddSection("Card", match.Groups[1].Value);
-				CurrentArticle = CurrentArticle.Replace(match.Value, "");
-			}
-
 			match = Regex.Match(CurrentArticle, @"(?s)==+\s*(Description|Effect|Effects|Play effect|Play Effect|Active|Ability)\s*==+\s*\n+(.*?)\n(\s*)?(?=(\[\[Category|==))");
 			if (match.Success)
 			{
-				article.AddSection(match.Groups[1].Value, match.Groups[2].Value);
+				article.AddSection("Card Text", match.Groups[2].Value);
 				CurrentArticle = CurrentArticle.Replace(match.Value, "");
 			}
 
-			match = Regex.Match(CurrentArticle, @"(?s)==+\s*(Premier Card|Signature Card|Spell)\s*==+\s*\n+(\{\{(Card|Deck).*?\}\})\n+");
+			match = Regex.Match(CurrentArticle, @"(?s)==+\s*(Premier Card|Signature Card|Spell|Card)\s*==+\s*\n+(\{\{(Card|Deck).*?\}\})\n+");
 			if (match.Success)
 			{
-				article.AddSection(match.Groups[1].Value, match.Groups[2].Value);
+				article.AddSection("Signature Card", match.Groups[2].Value);
 				CurrentArticle = CurrentArticle.Replace(match.Value, "");
 			}
 
@@ -223,7 +251,7 @@ namespace Artificer
 			match = Regex.Match(CurrentArticle, @"(?s)==+\s*(Related Cards|Related cards)\s*==+\s*\n+(.*?)\n(\s+)?(?=(\[\[Category|==))");
 			if (match.Success)
 			{
-				article.AddSection(match.Groups[1].Value, match.Groups[2].Value);
+				article.AddSection("Related Cards", match.Groups[2].Value);
 				CurrentArticle = CurrentArticle.Replace(match.Value, "");
 			}
 
@@ -241,10 +269,10 @@ namespace Artificer
 				CurrentArticle = CurrentArticle.Replace(match.Value, "");
 			}
 
-			match = Regex.Match(CurrentArticle, @"(?s)==+\s*Misc\s*==+\s*\n+(.*?)\n(\s+)?(?=(\[\[Category|==))");
+			match = Regex.Match(CurrentArticle, @"(?s)==+\s*(Misc|Miscellaneous)\s*==+\s*\n+(.*?)\n(\s+)?(?=(\[\[Category|==))");
 			if (match.Success)
 			{
-				article.AddSection("Misc", match.Groups[1].Value);
+				article.AddSection("Miscellaneous", match.Groups[2].Value);
 				CurrentArticle = CurrentArticle.Replace(match.Value, "");
 			}
 		}
@@ -258,11 +286,6 @@ namespace Artificer
 				CurrentArticle = CurrentArticle.Replace(cat.Value, "");
 			}
 
-		}
-
-		protected override string Finalize(WikiArticle article, string result)
-		{
-			return base.Finalize(article, result);
 		}
 
 		public OldExistingArticleParser(WikiCard card, string articleName, string article) : base(card, articleName, article) { }

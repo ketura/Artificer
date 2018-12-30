@@ -1,0 +1,14 @@
+﻿
+\Artifact\game\dcg\panorama\fonts\radiance-regular.otf
+
+Cooldown         - Glyph: filledbox   Unicode: 25A0
+Pulse            - Glyph: H22073      Unicode: 25A1
+Initiative       - Glyph: uni25A2     Unicode: 25A2
+Item Weapon      - Glyph: uni25A3     Unicode: 25A3
+Item Armor       - Glyph: uni25A4     Unicode: 25A4
+Item Health      - Glyph: uni25A5     Unicode: 25A5
+Item Consumable  - Glyph: uni25A6     Unicode: 25A6
+Card Hero        - Glyph: uni25A7     Unicode: 25A7
+Card Creep       - Glyph: uni25A8     Unicode: 25A8
+Card Improvement - Glyph: uni25A9     Unicode: 25A9
+Card Spell       - Glyph: H18543      Unicode: 25AA

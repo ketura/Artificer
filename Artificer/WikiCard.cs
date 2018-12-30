@@ -248,6 +248,8 @@ namespace Artificer
 		public ArtifactAbilityType AbilityType { get; set; }
 		[JsonConverter(typeof(StringEnumConverter))]
 		public ArtifactPassiveAbilityType PassiveAbilityType { get; set; }
+		public string Text { get; set; }
+		public string TextFormatted { get; set; }
 		public int Cooldown { get; set; }
 		public int Charges { get; set; }
 
@@ -265,7 +267,6 @@ namespace Artificer
 					AbilityType = ArtifactAbilityType.None;
 					break;
 			}
-
 			PassiveAbilityType = ArtifactPassiveAbilityType.None;
 			Charges = card.charges;
 		}
