@@ -70,11 +70,19 @@ namespace Artificer
 							artificer.CombineWikiArticles();
 							break;
 
-						case "upload":
+						case "upload_art":
 							artificer.MassUploadImageFilesToWiki();
 							break;
 
+						case "upload_audio":
+							artificer.MassUploadAudioFilesToWiki();
+							break;
+
 						case "update":
+
+							break;
+
+						case "revert":
 
 							break;
 
@@ -106,8 +114,10 @@ namespace Artificer
 						Console.WriteLine("  articles - download all card articles and export them to disk for comparison.");
 						Console.WriteLine("  generate - create new card articles from all card definitions.");
 						Console.WriteLine("  combine - take the downloaded card articles and incorporate updated card data into them.");
-						Console.WriteLine("  upload - push all extracted game images and cached API card images to the configured wiki.");
-						Console.WriteLine("  update - push or update all card articles to the wiki as needed.");
+						Console.WriteLine("  upload_art - push all extracted game images and cached API card images to the configured wiki.");
+						Console.WriteLine("  upload_audio - push all extracted game voiceover files to the configured wiki.");
+						Console.WriteLine("  update - push or update all card articles (as configured) to the wiki as needed.");
+						Console.WriteLine("  revert - revert all cards (that are configured) to a configured date");
 						Console.WriteLine(" ");
 						Console.WriteLine(" exit - exit\n");
 						command = Console.ReadLine().ToLower();

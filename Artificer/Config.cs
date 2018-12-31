@@ -42,6 +42,16 @@ namespace Artificer
 		public string WikiUsername { get; set; }
 		public string WikiPassword { get; set; }
 		public string ArticleLocation { get; set; }
+		public List<int> SetWhitelist { get; set; }
+		public List<string> ArticleUploadBlacklist { get; set; }
+		public List<string> ArticleUploadWhitelist { get; set; }
+
+		private Config()
+		{
+			ArticleUploadBlacklist = new List<string>();
+			ArticleUploadWhitelist = new List<string>();
+			SetWhitelist = new List<int>();
+		}
 
 		public static Config GetDefaultConfig()
 		{
@@ -56,7 +66,8 @@ namespace Artificer
 				GameImagesLocation = "./RawCardImages",
 				GameAudioLocation = "./GameAudio",
 				VOMappingLocation = "./data/VoiceoverMapping.json",
-				ArticleLocation =  "./WikiArticles"
+				ArticleLocation =  "./WikiArticles",
+				SetWhitelist = new List<int>() { 0, 1 }
 			};
 		}
 

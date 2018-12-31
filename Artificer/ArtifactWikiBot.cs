@@ -159,14 +159,14 @@ namespace Artificer
 				var suppressWarnings = false;
 				try
 				{
-					var result = await Site.UploadAsync($"File:{localName}", source, "bot upload test", suppressWarnings);
+					var result = await Site.UploadAsync($"File:{localName}", source, "Mass upload by ArtificerBot.", suppressWarnings);
 					if (result.ResultCode == UploadResultCode.Warning)
 					{
 						if(result.Warnings.TitleExists && result.Warnings.DuplicateVersions.Count == 0)
 						{
 							//source = new StreamUploadSource(s);
 							s.Seek(0, SeekOrigin.Begin);
-							result = await Site.UploadAsync($"File:{localName}", source, "bot upload test", true);
+							result = await Site.UploadAsync($"File:{localName}", source, "Mass upload by ArtificerBot.", true);
 						}
 						Console.WriteLine(result.Warnings.ToString());
 					}

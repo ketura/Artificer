@@ -61,7 +61,7 @@ namespace Artificer
 
 	public class OldArticleCombiner : WikiArticleCombiner
 	{
-		public static readonly Dictionary<string, string> SectionMapping = new Dictionary<string,string>()
+		public static readonly Dictionary<string, string> SectionMapping = new Dictionary<string, string>()
 		{
 			{ "Card Text", "Card Text" },
 			{ "Ability", "Ability" },
@@ -109,7 +109,7 @@ namespace Artificer
 			};
 		}
 
-		
+
 
 
 		protected override void CombineTabTemplate(WikiArticle parsed, WikiArticle generated, WikiArticle combined)
@@ -137,7 +137,7 @@ namespace Artificer
 
 			string shortStinger = $"{Card.Name} is a {Card.Color.ToString()} {Card.CardType}".ToLower();
 
-			if(generatedStinger.Contains(parsedStinger))
+			if (generatedStinger.Contains(parsedStinger))
 			{
 				combined.CardStinger = generated.CardStinger;
 			}
@@ -163,16 +163,16 @@ namespace Artificer
 				if (SkippedSections.Contains(key) || String.IsNullOrWhiteSpace(key))
 					continue;
 
-				if(key == "Miscellaneous")
+				if (key == "Miscellaneous")
 				{
-					foreach(string line in pair.Value.Split("\n"))
+					foreach (string line in pair.Value.Split("\n"))
 					{
 						if (line.ToLower().Contains("illustrator") || line.ToLower().Contains("illustrated"))
 							continue;
 						if (line.ToLower().Contains("source needed"))
 							continue;
 
-						if(line.Contains("More information has been revealed on"))
+						if (line.Contains("More information has been revealed on"))
 						{
 							sections[key] += line.Replace("More information has been revealed on", "This card was included in") + "\n";
 							continue;
@@ -199,10 +199,116 @@ namespace Artificer
 
 		protected override void CombineCategories(WikiArticle parsed, WikiArticle generated, WikiArticle combined)
 		{
-			
+			foreach (string cat in generated.Categories)
+			{
+				combined.Categories.Add(cat);
+			}
+
+			foreach (string cat in parsed.Categories)
+			{
+				bool found = false;
+				foreach (string gcat in generated.Categories)
+				{
+					if (gcat.Contains(cat) || cat.Contains(gcat))
+					{
+						found = true;
+						break;
+					}
+				}
+				if (!found)
+				{
+					combined.Categories.Add(cat);
+				}
+			}
 		}
 
 
 		public OldArticleCombiner(WikiCard card) : base(card) { }
+	}
+
+	public class OldLoreArticleCombiner : WikiArticleCombiner
+	{
+		public static readonly Dictionary<string, string> SectionMapping = new Dictionary<string, string>()
+		{
+			{ "Artifact", "Artifact" },
+			{ "Dota 2", "Dota 2" },
+			{ "Related Lore", "" },
+		};
+
+		public static readonly List<string> MandatorySections = new List<string>()
+		{
+			"Artifact",
+		};
+
+		public static readonly List<string> SkippedSections = new List<string>()
+		{
+			"Related Lore",
+			"Artifact"
+		};
+
+		protected static Dictionary<string, string> GetFreshSections()
+		{
+			return new Dictionary<string, string>()
+			{
+				{ "Artifact", "" },
+				{ "Dota 2", "" }
+			};
+		}
+
+		protected override void CombineTabTemplate(WikiArticle parsed, WikiArticle generated, WikiArticle combined)
+		{
+			//combined.TabTemplate = "{{AutomaticallyGenerated}}\n" + generated.TabTemplate;
+			combined.TabTemplate = generated.TabTemplate;
+		}
+
+		protected override void CombineCardInfobox(WikiArticle parsed, WikiArticle generated, WikiArticle combined)
+		{
+
+		}
+
+		protected override void CombineSubcardInfobox(WikiArticle parsed, WikiArticle generated, WikiArticle combined)
+		{
+
+		}
+
+		protected override void CombineCardStinger(WikiArticle parsed, WikiArticle generated, WikiArticle combined)
+		{
+
+		}
+
+		protected override void CombineSections(WikiArticle parsed, WikiArticle generated, WikiArticle combined)
+		{
+			var sections = GetFreshSections();
+
+			foreach (var pair in generated.Sections)
+			{
+				sections[pair.Key] += pair.Value + "\n";
+			}
+
+			foreach (var pair in parsed.Sections)
+			{
+				string key = SectionMapping[pair.Key];
+				if (SkippedSections.Contains(key) || String.IsNullOrWhiteSpace(key))
+					continue;
+
+				sections[key] += pair.Value + "\n";
+			}
+
+			foreach (var pair in sections)
+			{
+				if (String.IsNullOrWhiteSpace(pair.Value) && !MandatorySections.Contains(pair.Key))
+					continue;
+
+				combined.AddSection(pair.Key, pair.Value);
+			}
+		}
+
+		protected override void CombineCategories(WikiArticle parsed, WikiArticle generated, WikiArticle combined)
+		{
+			combined.Categories = generated.Categories;
+		}
+
+
+		public OldLoreArticleCombiner(WikiCard card) : base(card) { }
 	}
 }

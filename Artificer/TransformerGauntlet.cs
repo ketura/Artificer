@@ -100,11 +100,11 @@ namespace Artificer
 			gauntlet.AddSetup(new SimpleTextSubstitution(@"<BR/>\\n", "<br/>"));
 			gauntlet.AddSetup(new SimpleTextSubstitution(@"<br/>", "<br/>"));
 
-			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[g:608\[&#9633;]]", "[[Pulse]]"));
+			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[g:608\[&#9633;]]", "{{Pulse}}"));
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[color:quick\[\[g:604\[&#9634; Get initiative]]", "{{Get initiative}}"));
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[g:\d+\[(.*?)]]", "[[$1]]"));
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[abilityname\[.*?]]", ""));
-			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[activatedability\[\[color:ability\[Active &#9632;(\d):]]", "[[Cooldown]]: $1."));
+			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[activatedability\[\[color:ability\[Active &#9632;(\d):]]", "{{Cooldown|$1}}."));
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[color:(black|blue|green|red)\[(.*?)(black|blue|green|red) (.*?)]]", "$2{{$3}} $4"));
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[color:.*?\[(.*?)]]", "$1"));
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"]]$", ""));

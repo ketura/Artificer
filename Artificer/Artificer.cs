@@ -57,6 +57,8 @@ namespace Artificer
 		public Dictionary<string, WikiArticle> GeneratedCardArticles { get; set; }
 		public Dictionary<string, WikiArticle> GeneratedLoreArticles { get; set; }
 		public Dictionary<string, WikiArticle> GeneratedAudioArticles { get; set; }
+		public Dictionary<string, string> GeneratedStrategyArticles { get; set; }
+		public Dictionary<string, string> GeneratedChangelogArticles { get; set; }
 
 		public Dictionary<string, WikiArticle> ParsedCardArticles { get; set; }
 		public Dictionary<string, WikiArticle> ParsedLoreArticles { get; set; }
@@ -70,6 +72,19 @@ namespace Artificer
 		public Artificer()
 		{
 			_config = Config.LoadConfig(ConfigLocation);
+		}
+
+		private string LookupVOName(int cardID)
+		{
+			foreach(var pair in VOMapping)
+			{
+				if(pair.Value == cardID)
+				{
+					return pair.Key;
+				}
+			}
+
+			return null;
 		}
 
 		private void AssertValveData()
@@ -859,6 +874,38 @@ namespace Artificer
 			bot.End();
 		}
 
+		public void MassUploadAudioFilesToWiki()
+		{
+			MassUploadAudioFilesToWiki(_config.GameAudioLocation, _config.WikiURL, _config.WikiUsername, _config.WikiPassword);
+		}
+		public void MassUploadAudioFilesToWiki(string GameAudioLocation, string wikiurl, string wikiuser, string wikipass)
+		{
+			AssertGameFileInfo();
+
+			ArtifactWikiBot bot = new ArtifactWikiBot(wikiurl, wikiuser, wikipass);
+			bot.Initialize();
+			foreach (var card in Cards.Values)
+			{
+				if (!_config.SetWhitelist.Contains(card.SetID))
+					continue;
+				if (_config.ArticleUploadWhitelist.Count > 0 && !_config.ArticleUploadWhitelist.Contains(card.Name))
+					continue;
+				if (_config.ArticleUploadBlacklist.Count > 0 && _config.ArticleUploadBlacklist.Contains(card.Name))
+					continue;
+
+				string audioName = LookupVOName(card.ID);
+				if (audioName == null)
+					continue;
+
+				foreach (var file in card.VoiceOverFiles)
+				{
+					bot.UploadFile(Path.Combine(GameAudioLocation, $"sounds/responses/set_{card.SetID.ToString("00")}/{audioName}/{audioName}_{file.Key}.mp3"), file.Value);
+				}
+			}
+
+			bot.End();
+		}
+
 		public void DownloadCardArticles()
 		{
 			DownloadCardArticles(_config.ArticleLocation, _config.WikiURL, _config.WikiUsername, _config.WikiPassword);
@@ -930,6 +977,8 @@ namespace Artificer
 			GeneratedCardArticles = new Dictionary<string, WikiArticle>();
 			GeneratedLoreArticles = new Dictionary<string, WikiArticle>();
 			GeneratedAudioArticles = new Dictionary<string, WikiArticle>();
+			GeneratedStrategyArticles = new Dictionary<string, string>();
+			GeneratedChangelogArticles = new Dictionary<string, string>();
 
 			var basepath = Path.GetFullPath(Path.Combine(fileLocation, "New_Articles"));
 			if(Directory.Exists(basepath))
@@ -942,13 +991,17 @@ namespace Artificer
 				Directory.CreateDirectory(basepath);
 			}
 
+			
+
 			foreach (var card in ValidCards)
 			{
-				GenerateArticle(card, Path.Combine(basepath, card.Name));				
+				string baseStrategyPage = $"{SharedArticleFunctions.GetTabTemplate(card.CardType)}\n{{{{Stub}}}}\n''Card has not yet had any strategy information written for it.''\n\n[Category:Strategy] [Category:No Strategy]";
+				string baseChangelogPage = $"{SharedArticleFunctions.GetTabTemplate(card.CardType)}\n{{{{Stub}}}}\n''Card has not yet had any changelog information entered.''\n\n[Category:Changelog] [Category:No Changelog]";
+				GenerateArticle(card, Path.Combine(basepath, card.Name), baseStrategyPage, baseChangelogPage);				
 			}
 		}
 
-		public Dictionary<string, string> GenerateArticle(WikiCard card, string basefile)
+		public Dictionary<string, string> GenerateArticle(WikiCard card, string basefile, string stratPage, string changePage)
 		{
 
 			WikiArticleGenerator CardArticleGenerator = null;
@@ -978,10 +1031,15 @@ namespace Artificer
 			GeneratedCardArticles[card.Name] = CardArticleGenerator.GenerateArticle();
 			GeneratedLoreArticles[card.Name] = LoreArticleGenerator.GenerateArticle();
 			GeneratedAudioArticles[card.Name] = AudioArticleGenerator.GenerateArticle();
+			GeneratedStrategyArticles[card.Name] = stratPage;
+			GeneratedChangelogArticles[card.Name] = changePage;
 
 			File.WriteAllText($"{Path.GetFullPath(basefile)}.txt", CardArticleGenerator.GenerateArticleText(GeneratedCardArticles[card.Name]));
 			File.WriteAllText($"{Path.GetFullPath(basefile)}_Lore.txt", LoreArticleGenerator.GenerateArticleText(GeneratedLoreArticles[card.Name]));
 			File.WriteAllText($"{Path.GetFullPath(basefile)}_Audio.txt", AudioArticleGenerator.GenerateArticleText(GeneratedAudioArticles[card.Name]));
+
+			File.WriteAllText($"{Path.GetFullPath(basefile)}_Strategy.txt", stratPage);
+			File.WriteAllText($"{Path.GetFullPath(basefile)}_Changelog.txt", changePage);
 
 			return null;
 		}
@@ -1062,13 +1120,29 @@ namespace Artificer
 
 			foreach(var card in ValidCards)
 			{
-				WikiArticle generated = GeneratedCardArticles[card.Name];
-				ParsedCardArticles.TryGetValue(card.Name, out WikiArticle parsed);
+				WikiArticle genCardArticle = GeneratedCardArticles[card.Name];
+				ParsedCardArticles.TryGetValue(card.Name, out WikiArticle parsedCardArticle);
+				OldArticleCombiner cardCombiner = new OldArticleCombiner(card);
+				var cardResult = cardCombiner.CombineArticles(parsedCardArticle, genCardArticle);
 
-				OldArticleCombiner combiner = new OldArticleCombiner(card);
-				var result = combiner.CombineArticles(parsed, generated);
+				WikiArticle genLoreArticle = GeneratedLoreArticles[card.Name];
+				ParsedLoreArticles.TryGetValue(card.Name, out WikiArticle parsedLoreArticle);
+				OldLoreArticleCombiner loreCombiner = new OldLoreArticleCombiner(card);
+				var loreResult = loreCombiner.CombineArticles(parsedLoreArticle, genLoreArticle);
 
-				File.WriteAllText(Path.Combine(combinedPath, $"{card.Name}.txt"), result.GenerateNewArticle(card));
+				//WikiArticle genAudioArticle = GeneratedAudioArticles[card.Name];
+				//ParsedLoreArticles.TryGetValue(card.Name, out WikiArticle parsedAudioArticle);
+				//OldArticleCombiner audioCombiner = new OldArticleCombiner(card);
+				//var audioResult = loreCombiner.CombineArticles(parsedAudioArticle, genAudioArticle);
+
+				var audioResult = GeneratedAudioArticles[card.Name];
+
+				File.WriteAllText(Path.Combine(combinedPath, $"{card.Name}.txt"), cardResult.GenerateNewArticle(card));
+				File.WriteAllText(Path.Combine(combinedPath, $"{card.Name}_Lore.txt"), loreResult.GenerateNewArticle(card));
+				File.WriteAllText(Path.Combine(combinedPath, $"{card.Name}_Audio.txt"), audioResult.GenerateNewArticle(card));
+
+				File.WriteAllText(Path.Combine(combinedPath, $"{card.Name}_Strategy.txt"), GeneratedStrategyArticles[card.Name]);
+				File.WriteAllText(Path.Combine(combinedPath, $"{card.Name}_Changelog.txt"), GeneratedChangelogArticles[card.Name]);
 
 			}
 		}

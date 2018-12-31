@@ -154,6 +154,18 @@ namespace Artificer
 			return result;
 		}
 
+		public static List<string> GetStandardCategories(WikiCard card, string typeCat, string setName)
+		{
+			return new List<string>()
+			{
+				typeCat,
+				card.Color.ToString(),
+				card.Rarity.ToString(),
+				card.IsCollectable ? "Collectable" : "Non-collectable",
+				setName
+			};
+		}
+
 		public static Dictionary<ArtifactCardType, string> TemplateAbbr = new Dictionary<ArtifactCardType, string>()
 		{
 			{ ArtifactCardType.Hero, "H" },
@@ -233,7 +245,7 @@ namespace Artificer
 	{
 		protected static string GetEmptyResponseArticle(WikiCard card)
 		{
-			return $"{GetTabTemplate(card.CardType)}\n'Card has no responses.'\n[Category:Responses]";
+			return $"{GetTabTemplate(card.CardType)}\n''Card has no responses.''\n[Category:Responses] [Category:No Responses]";
 		}
 		protected override void AddTabTemplate(WikiArticle article)
 		{
@@ -337,13 +349,7 @@ namespace Artificer
 
 		protected override void AddCategories(WikiArticle article)
 		{
-			article.Categories = new List<string>()
-			{
-				"Heroes",
-				Card.Color.ToString(),
-				Card.Rarity.ToString(),
-				Sets[Card.SetID].Name
-			};
+			article.Categories = GetStandardCategories(Card, "Heroes", Sets[Card.SetID].Name);
 		}
 
 		public HeroArticleGenerator(WikiCard card) : base(card, ArtifactCardType.Hero, "H") { }
@@ -406,13 +412,7 @@ namespace Artificer
 
 		protected override void AddCategories(WikiArticle article)
 		{
-			article.Categories = new List<string>()
-			{
-				"Creeps",
-				Card.Color.ToString(),
-				Card.Rarity.ToString(),
-				Sets[Card.SetID].Name
-			};
+			article.Categories = GetStandardCategories(Card, "Creeps", Sets[Card.SetID].Name);
 		}
 
 		public CreepArticleGenerator(WikiCard card) : base(card, ArtifactCardType.Creep, "C") { }
@@ -461,13 +461,7 @@ namespace Artificer
 
 		protected override void AddCategories(WikiArticle article)
 		{
-			article.Categories = new List<string>()
-			{
-				"Improvements",
-				Card.Color.ToString(),
-				Card.Rarity.ToString(),
-				Sets[Card.SetID].Name
-			};
+			article.Categories = GetStandardCategories(Card, "Improvements", Sets[Card.SetID].Name);
 		}
 
 		public ImprovementArticleGenerator(WikiCard card) : base(card, ArtifactCardType.Improvement, "Im") { }
@@ -516,13 +510,7 @@ namespace Artificer
 
 		protected override void AddCategories(WikiArticle article)
 		{
-			article.Categories = new List<string>()
-			{
-				"Spells",
-				Card.Color.ToString(),
-				Card.Rarity.ToString(),
-				Sets[Card.SetID].Name
-			};
+			article.Categories = GetStandardCategories(Card, "Spells", Sets[Card.SetID].Name);
 		}
 
 		public SpellArticleGenerator(WikiCard card) : base(card, ArtifactCardType.Spell, "S") { }
@@ -589,8 +577,9 @@ namespace Artificer
 			{
 				"Items",
 				CategoryMapping[Card.SubType],
-				Card.Color.ToString(),
+				Card.Color != ArtifactColor.None ? Card.Color.ToString() : "No Color",
 				Card.Rarity.ToString(),
+				Card.IsCollectable ? "Collectable" : "Non-collectable",
 				Sets[Card.SetID].Name
 			};
 		}
