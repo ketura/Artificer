@@ -28,9 +28,12 @@ using WikiClientLibrary.Client;
 using WikiClientLibrary.Sites;
 using WikiClientLibrary.Pages;
 using WikiClientLibrary;
+using WikiClientLibrary.Generators;
 using System.IO;
 using WikiClientLibrary.Files;
 using System.Linq;
+using System.Threading;
+using System.Web;
 
 namespace Artificer
 {
@@ -43,6 +46,7 @@ namespace Artificer
 
 		private WikiClient Client { get; set; }
 		private WikiSite Site { get; set; }
+		private string ArtificerUser => "ArtificerBot";
 
 		public ArtifactWikiBot(string url, string user, string pass)
 		{
@@ -65,6 +69,18 @@ namespace Artificer
 		{
 			UploadFileAsync(filename, localName).Wait();
 		}
+
+		public void RevertArticle(string articleName)
+		{
+			RevertArticleAsync(articleName).Wait();
+		}
+
+		public void UploadArticle(string articleName, string content)
+		{
+			UploadArticleAsync(articleName, content).Wait();
+		}
+
+		
 
 		public IEnumerable<WikiPage> DownloadArticles(IEnumerable<string> titles)
 		{
@@ -97,7 +113,7 @@ namespace Artificer
 			// A WikiClient has its own CookieContainer.
 			Client = new WikiClient
 			{
-				ClientUserAgent = "WCLQuickStart/1.0 (your user name or contact information here)"
+				ClientUserAgent = "WCLQuickStart/1.0 (Artificer wiki bot)"
 			};
 			// You can create multiple WikiSite instances on the same WikiClient to share the state.
 			Site = new WikiSite(Client, $"{WikiBaseURL}/api.php");
@@ -113,6 +129,8 @@ namespace Artificer
 				Console.WriteLine(ex.Message);
 				// Add your exception handler for failed login attempt.
 			}
+
+			
 
 			// Do what you want
 			Console.WriteLine(Site.SiteInfo.SiteName);
@@ -178,6 +196,43 @@ namespace Artificer
 					Console.WriteLine(ex.Message);
 				}
 			}
+		}
+
+		private async Task RevertArticleAsync(string article)
+		{
+
+			var generator = new RevisionsGenerator(Site)
+			{
+				PageTitle = article,
+				TimeAscending = false,
+				UserName = ArtificerUser
+			};
+
+			var revs = await generator.EnumItemsAsync().ToList();
+
+			if (revs.Count == 0)
+				return;
+
+			var revision = revs.First();
+
+			//https://www.mediawiki.org/wiki/API:Rollback
+			var tokenQuery = new { action = "query", meta = "tokens", titles = article };
+			var tokenResult = await Site.InvokeMediaWikiApiAsync(new MediaWikiFormRequestMessage(tokenQuery), CancellationToken.None);
+
+			string token = (string)tokenResult["query"]["tokens"]["csrftoken"];
+
+			//action = rollback & title = Main % 20Page & user = Username & markbot & token = 094a45ddbbd5e90d55d79d2a23a8c921 % 2B\
+			var editQuery = new { action = "edit", title = article, bot = true, undo = revision.Id, undoafter = true,
+				summary = "ArtificerBot reverting last mass edit on page due to user request.", token = token};
+			var result = await Site.InvokeMediaWikiApiAsync(new MediaWikiFormRequestMessage(editQuery), CancellationToken.None);
+		}
+
+		private async Task UploadArticleAsync(string articleName, string content)
+		{
+			var page = new WikiPage(Site, articleName);
+			await page.RefreshAsync(PageQueryOptions.FetchContent);
+			page.Content = content;
+			await page.UpdateContentAsync("Artificer mass editing card articles to bring cargo definitions into line and introduce consistency to layout.", false, true);
 		}
 
 

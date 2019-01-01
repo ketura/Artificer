@@ -79,11 +79,11 @@ namespace Artificer
 							break;
 
 						case "update":
-
+							artificer.UpdateArticles();
 							break;
 
 						case "revert":
-
+							artificer.RevertArticles();
 							break;
 
 
@@ -117,7 +117,7 @@ namespace Artificer
 						Console.WriteLine("  upload_art - push all extracted game images and cached API card images to the configured wiki.");
 						Console.WriteLine("  upload_audio - push all extracted game voiceover files to the configured wiki.");
 						Console.WriteLine("  update - push or update all card articles (as configured) to the wiki as needed.");
-						Console.WriteLine("  revert - revert all cards (that are configured) to a configured date");
+						Console.WriteLine("  revert - revert all Artificer edits to the configured articles.");
 						Console.WriteLine(" ");
 						Console.WriteLine(" exit - exit\n");
 						command = Console.ReadLine().ToLower();

@@ -124,6 +124,18 @@ namespace Artificer
 			}
 		}
 
+		private bool FilterCard(WikiCard card)
+		{
+			if (!_config.SetWhitelist.Contains(card.SetID))
+				return true;
+			if (_config.ArticleUploadWhitelist.Count > 0 && !_config.ArticleUploadWhitelist.Contains(card.Name))
+				return true;
+			if (_config.ArticleUploadBlacklist.Count > 0 && _config.ArticleUploadBlacklist.Contains(card.Name))
+				return true;
+
+			return false;
+		}
+
 		public void DownloadValveDefinitions()
 		{
 			DownloadValveDefinitions(_config.ValveAPIBaseURL, _config.ValveCacheLocation);
@@ -852,6 +864,8 @@ namespace Artificer
 			bot.Initialize();
 			foreach (var card in Cards.Values)
 			{
+				if (FilterCard(card))
+					continue;
 				//Main Card Image
 				bot.UploadFile(Path.Combine(APIImageLocation, "jpg/cards/default/", card.CardImage), card.CardImage);
 				//Card Icon
@@ -886,11 +900,7 @@ namespace Artificer
 			bot.Initialize();
 			foreach (var card in Cards.Values)
 			{
-				if (!_config.SetWhitelist.Contains(card.SetID))
-					continue;
-				if (_config.ArticleUploadWhitelist.Count > 0 && !_config.ArticleUploadWhitelist.Contains(card.Name))
-					continue;
-				if (_config.ArticleUploadBlacklist.Count > 0 && _config.ArticleUploadBlacklist.Contains(card.Name))
+				if (FilterCard(card))
 					continue;
 
 				string audioName = LookupVOName(card.ID);
@@ -1145,6 +1155,93 @@ namespace Artificer
 				File.WriteAllText(Path.Combine(combinedPath, $"{card.Name}_Changelog.txt"), GeneratedChangelogArticles[card.Name]);
 
 			}
+		}
+
+		public void RevertArticles()
+		{
+			RevertArticles(_config.WikiURL, _config.WikiUsername, _config.WikiPassword);
+		}
+
+		public void RevertArticles(string wikiurl, string wikiuser, string wikipass)
+		{
+			AssertGameFileInfo();
+
+			ArtifactWikiBot bot = new ArtifactWikiBot(wikiurl, wikiuser, wikipass);
+			bot.Initialize();
+
+			foreach (var card in Cards.Values)
+			{
+				if (FilterCard(card))
+					continue;
+
+				bot.RevertArticle(card.Name);
+			}
+
+			bot.End();
+		}
+
+		public void UpdateArticles()
+		{
+			UpdateArticles(Path.Combine(_config.ArticleLocation, "Combined_Articles"), _config.WikiURL, _config.WikiUsername, _config.WikiPassword);
+		}
+
+		public void UpdateArticles(string fileLocation, string wikiurl, string wikiuser, string wikipass)
+		{
+			AssertGameFileInfo();
+
+			ArtifactWikiBot bot = new ArtifactWikiBot(wikiurl, wikiuser, wikipass);
+			bot.Initialize();
+
+			foreach (var card in Cards.Values)
+			{
+				if (FilterCard(card))
+					continue;
+
+				string cardArticle = $"{card.Name}";
+				string loreArticle = $"{card.Name}/Lore";
+				string audioArticle = $"{card.Name}/Audio";
+				string strategyArticle = $"{card.Name}/Strategy";
+				string changeArticle = $"{card.Name}/Changelog";
+
+
+				string cardArticlePath = Path.Combine(fileLocation, $"{card.Name}.txt");
+				string loreArticlePath = Path.Combine(fileLocation, $"{card.Name}_Lore.txt");
+				string audioArticlePath = Path.Combine(fileLocation, $"{card.Name}_Audio.txt");
+				string strategyArticlePath = Path.Combine(fileLocation, $"{card.Name}_Strategy.txt");
+				string changeArticlePath = Path.Combine(fileLocation, $"{card.Name}_Changelog.txt");
+
+				if (File.Exists(cardArticlePath))
+				{
+					string article = File.ReadAllText(cardArticlePath);
+					bot.UploadArticle(cardArticle, article);
+				}
+
+				if (File.Exists(loreArticlePath))
+				{
+					string article = File.ReadAllText(loreArticlePath);
+					bot.UploadArticle(loreArticle, article);
+				}
+
+				if (File.Exists(audioArticlePath))
+				{
+					string article = File.ReadAllText(audioArticlePath);
+					bot.UploadArticle(audioArticle, article);
+				}
+
+				if (File.Exists(strategyArticlePath))
+				{
+					string article = File.ReadAllText(strategyArticlePath);
+					bot.UploadArticle(strategyArticle, article);
+				}
+
+				if (File.Exists(changeArticlePath))
+				{
+					string article = File.ReadAllText(changeArticlePath);
+					bot.UploadArticle(changeArticle, article);
+				}
+			}
+
+			bot.End();
 		}
 
 	}

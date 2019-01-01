@@ -81,8 +81,6 @@ namespace Artificer
 		public static readonly List<string> MandatorySections = new List<string>()
 		{
 			"Notes",
-			"Strategy",
-			"Changelog",
 			"Miscellaneous"
 		};
 
