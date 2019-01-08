@@ -869,7 +869,7 @@ namespace Artificer
 				//Main Card Image
 				bot.UploadFile(Path.Combine(APIImageLocation, "jpg/cards/default/", card.CardImage), card.CardImage);
 				//Card Icon
-				bot.UploadFile(Path.Combine(APIImageLocation, "jpg/icons/default/", card.CardIcon), card.CardIcon);
+				//bot.UploadFile(Path.Combine(APIImageLocation, "jpg/icons/default/", card.CardIcon), card.CardIcon);
 				//Raw Background Image
 				bot.UploadFile(Path.Combine(GameImageLocation, $"jpg/panorama/images/card_art/set{card.SetID.ToString("00")}/full_art", $"{card.ID}_psd.jpg"), card.CardImageRaw);
 				//Unfiltered Card Icon
@@ -879,7 +879,7 @@ namespace Artificer
 				{
 					var hero = card.SubCard as WikiHero;
 					//API Hero Icon
-					bot.UploadFile(Path.Combine(APIImageLocation, "png/hero_icons/default/", hero.HeroIcon), hero.HeroIcon);
+					//bot.UploadFile(Path.Combine(APIImageLocation, "png/hero_icons/default/", hero.HeroIcon), hero.HeroIcon);
 					//Raw Pixel Art Hero Icon
 					bot.UploadFile(Path.Combine(GameImageLocation, $"png/panorama/images/card_art/set{card.SetID.ToString("00")}/hero_icons", $"{card.ID}_png.png"), hero.HeroIconRaw);
 				}
@@ -1005,8 +1005,8 @@ namespace Artificer
 
 			foreach (var card in ValidCards)
 			{
-				string baseStrategyPage = $"{SharedArticleFunctions.GetTabTemplate(card.CardType)}\n{{{{Stub}}}}\n''Card has not yet had any strategy information written for it.''\n\n[Category:Strategy] [Category:No Strategy]";
-				string baseChangelogPage = $"{SharedArticleFunctions.GetTabTemplate(card.CardType)}\n{{{{Stub}}}}\n''Card has not yet had any changelog information entered.''\n\n[Category:Changelog] [Category:No Changelog]";
+				string baseStrategyPage = $"{SharedArticleFunctions.GetTabTemplate(card.CardType)}\n{{{{Stub}}}}\n''Card has not yet had any strategy information written for it.''\n\n[[Category:Strategy]] [[Category:No Strategy]]";
+				string baseChangelogPage = $"{SharedArticleFunctions.GetTabTemplate(card.CardType)}\n{{{{Stub}}}}\n''Card has not yet had any changelog information entered.''\n\n[[Category:Changelog]] [[Category:No Changelog]]";
 				GenerateArticle(card, Path.Combine(basepath, card.Name), baseStrategyPage, baseChangelogPage);				
 			}
 		}

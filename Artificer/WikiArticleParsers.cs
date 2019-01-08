@@ -241,7 +241,7 @@ namespace Artificer
 				CurrentArticle = CurrentArticle.Replace(match.Value, "");
 			}
 
-			match = Regex.Match(CurrentArticle, @"(?s)==+\s*Notes\s*==+\s*\n+(.*?)\n(\s+)?(?=(\[\[Category|==))");
+			match = Regex.Match(CurrentArticle, @"(?s)==+\s*Notes\s*==+\s*\n+?([^=\[]*?)\n(?=(\s*\[\[Category|==)?)(\s+?)");
 			if (match.Success)
 			{
 				article.AddSection("Notes", match.Groups[1].Value);

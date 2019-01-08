@@ -204,6 +204,9 @@ namespace Artificer
 
 			foreach (string cat in parsed.Categories)
 			{
+				if (cat == "Unreleased")
+					continue;
+
 				bool found = false;
 				foreach (string gcat in generated.Categories)
 				{

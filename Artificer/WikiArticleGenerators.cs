@@ -259,11 +259,20 @@ namespace Artificer
 
 		protected override void AddSections(WikiArticle article)
 		{
-			string combined = "";
+			string combined = @"{| class=""wikitable"" style=""width: 95 %; margin: auto; ""
+!style = ""width: 300px"" | File
+!Name
+!Transcription
+";
 			foreach(var pair in Card.VoiceOverFiles)
 			{
-				combined += $"* [[{pair.Value}|File]]: {Card.VoiceOverLines[pair.Key]}\n";
+				combined += $@"|-
+|[[File:{pair.Value}]]
+|{pair.Key}
+|{Card.VoiceOverLines[pair.Key]}
+";
 			}
+			combined += "|}";
 			article.AddSection("Uncategorized", combined);
 		}
 

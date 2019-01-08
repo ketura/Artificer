@@ -171,6 +171,8 @@ namespace Artificer
 				return;
 			}
 
+			Console.WriteLine($"Uploading file to {localName}...");
+
 			using (var s = File.OpenRead(filename))
 			{
 				var source = new StreamUploadSource(s);
@@ -188,6 +190,7 @@ namespace Artificer
 						}
 						Console.WriteLine(result.Warnings.ToString());
 					}
+					Console.WriteLine("Done.");
 				}
 				catch (OperationFailedException ex)
 				{
@@ -195,44 +198,78 @@ namespace Artificer
 					// See https://gerrit.wikimedia.org/r/378702.
 					Console.WriteLine(ex.Message);
 				}
+				catch(Exception ex)
+				{
+					Console.WriteLine("Error while uploading!");
+					Console.WriteLine(ex.ToString());
+				}
 			}
 		}
 
 		private async Task RevertArticleAsync(string article)
 		{
+			Console.Write($"Reverting recent ArtificerBot edits to {article}...");
 
-			var generator = new RevisionsGenerator(Site)
+			try
 			{
-				PageTitle = article,
-				TimeAscending = false,
-				UserName = ArtificerUser
-			};
+				var generator = new RevisionsGenerator(Site)
+				{
+					PageTitle = article,
+					TimeAscending = false,
+					UserName = ArtificerUser
+				};
 
-			var revs = await generator.EnumItemsAsync().ToList();
+				var revs = await generator.EnumItemsAsync().ToList();
 
-			if (revs.Count == 0)
-				return;
+				if (revs.Count == 0)
+					return;
 
-			var revision = revs.First();
+				var revision = revs.First();
 
-			//https://www.mediawiki.org/wiki/API:Rollback
-			var tokenQuery = new { action = "query", meta = "tokens", titles = article };
-			var tokenResult = await Site.InvokeMediaWikiApiAsync(new MediaWikiFormRequestMessage(tokenQuery), CancellationToken.None);
+				//https://www.mediawiki.org/wiki/API:Rollback
+				var tokenQuery = new { action = "query", meta = "tokens", titles = article };
+				var tokenResult = await Site.InvokeMediaWikiApiAsync(new MediaWikiFormRequestMessage(tokenQuery), CancellationToken.None);
 
-			string token = (string)tokenResult["query"]["tokens"]["csrftoken"];
+				string token = (string)tokenResult["query"]["tokens"]["csrftoken"];
 
-			//action = rollback & title = Main % 20Page & user = Username & markbot & token = 094a45ddbbd5e90d55d79d2a23a8c921 % 2B\
-			var editQuery = new { action = "edit", title = article, bot = true, undo = revision.Id, undoafter = true,
-				summary = "ArtificerBot reverting last mass edit on page due to user request.", token = token};
-			var result = await Site.InvokeMediaWikiApiAsync(new MediaWikiFormRequestMessage(editQuery), CancellationToken.None);
+				//action = rollback & title = Main % 20Page & user = Username & markbot & token = 094a45ddbbd5e90d55d79d2a23a8c921 % 2B\
+				var editQuery = new
+				{
+					action = "edit",
+					title = article,
+					bot = true,
+					undo = revision.Id,
+					undoafter = true,
+					summary = "ArtificerBot reverting last mass edit on page due to user request.",
+					token
+				};
+				var result = await Site.InvokeMediaWikiApiAsync(new MediaWikiFormRequestMessage(editQuery), CancellationToken.None);
+				Console.WriteLine("Done.");
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine("Error while reverting!");
+				Console.WriteLine(ex.ToString());
+			}
 		}
 
 		private async Task UploadArticleAsync(string articleName, string content)
 		{
-			var page = new WikiPage(Site, articleName);
-			await page.RefreshAsync(PageQueryOptions.FetchContent);
-			page.Content = content;
-			await page.UpdateContentAsync("Artificer mass editing card articles to bring cargo definitions into line and introduce consistency to layout.", false, true);
+			Console.Write($"Uploading article to {articleName}...");
+
+			try
+			{
+				var page = new WikiPage(Site, articleName);
+				await page.RefreshAsync(PageQueryOptions.FetchContent);
+				page.Content = content;
+				await page.UpdateContentAsync("Artificer mass editing card articles to bring cargo definitions into line and introduce consistency to layout.", false, true);
+				Console.WriteLine("Done.");
+			}
+			catch(Exception ex)
+			{
+				Console.WriteLine("Error while uploading!");
+				Console.WriteLine(ex.ToString());
+			}
 		}
 
 

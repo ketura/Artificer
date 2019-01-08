@@ -153,8 +153,8 @@ namespace Artificer
 			TextAPI = card.card_text.GetValueOrDefault("english");
 			CardImage = GetImageName(this, "card");
 			CardImageRaw = GetImageName(this, "cardraw");
-			CardIcon = GetImageName(this, "icon");
-			CardIconRaw = GetImageName(this, "iconraw");
+			CardIcon = GetImageName(this, "iconborder");
+			CardIconRaw = GetImageName(this, "icon");
 			Illustrator = card.illustrator;
 
 			foreach(var reference in card.references)
@@ -320,8 +320,8 @@ namespace Artificer
 			Attack = hero.attack;
 			Armor = hero.armor;
 			Health = hero.hit_points;
-			HeroIcon = WikiCard.GetImageName(setID, hero, "hero", extension:"png");
-			HeroIconRaw = WikiCard.GetImageName(setID, hero, "heroraw", extension: "png");
+			HeroIcon = WikiCard.GetImageName(setID, hero, "herocolor", extension:"png");
+			HeroIconRaw = WikiCard.GetImageName(setID, hero, "hero", extension: "png");
 			foreach (var reference in hero.references)
 			{
 				if (reference.ref_type == ArtifactReferenceType.Signature)
