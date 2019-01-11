@@ -104,13 +104,14 @@ namespace Artificer
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[color:quick\[\[g:604\[&#9634; Get initiative]]", "{{Get initiative}}"));
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[g:\d+\[(.*?)]]", "[[$1]]"));
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[abilityname\[.*?]]", ""));
-			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[activatedability\[\[color:ability\[Active &#9632;(\d):]]", "{{Cooldown|$1}}."));
+			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[activatedability\[\[color:ability\[Active &#9632;(\d):]]", "{{Cooldown|$1}}"));
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[color:(black|blue|green|red)\[(.*?)(black|blue|green|red) (.*?)]]", "$2{{$3}} $4"));
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[color:.*?\[(.*?)]]", "$1"));
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"]]$", ""));
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"<BR/>\\n", "<br/>"));
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"<br/>", "<br/>"));
 
+			gauntlet.AddMultiple(new CorrectAbilities());
 			gauntlet.AddMultiple(new ResolveReferences());
 			gauntlet.AddMultiple(new ResolveSignatures());
 			gauntlet.AddMultiple(new ResolveTokens());
@@ -127,6 +128,7 @@ namespace Artificer
 			gauntlet.AddSingle(new SimpleVoiceoverSubstitution(@"<i>(.*?)</i>", "''$1''"));
 
 			gauntlet.AddSingle(new KeywordHunter());
+			gauntlet.AddSingle(new AbilitySubtypeProcessing());
 
 
 			return gauntlet;

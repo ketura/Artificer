@@ -75,23 +75,77 @@ namespace Artificer
 				{ ArtifactKeyword.DeathEffect, new List<string>() { "Death Effect:" } },
 				{ ArtifactKeyword.PlayEffect, new List<string>() { "Play Effect:" } },
 				{ ArtifactKeyword.ContinuousEffect, new List<string>() { "" } },
-				{ ArtifactKeyword.ReactiveEffect, new List<string>() { "" } }
+				{ ArtifactKeyword.ReactiveEffect, new List<string>() { "after", "Play Effect:" } }
 			};
 
 			public void Transform(WikiCard card)
 			{
-				foreach(var pair in KeywordTriggers)
+				foreach (var pair in KeywordTriggers)
 				{
-					foreach(string trigger in pair.Value)
+					foreach (string trigger in pair.Value)
 					{
 						if (String.IsNullOrWhiteSpace(trigger))
 							continue;
 
 						var match = Regex.Match(card.Text, trigger);
-						if(match.Success)
+						if (match.Success)
 						{
 							card.Keywords[pair.Key] = match.Value;
 						}
+					}
+				}
+
+				//if(card.Keywords.ContainsKey(ArtifactKeyword.DeathEffect))
+				//{
+				//	card.
+				//}
+			}
+		}
+
+		public class AbilitySubtypeProcessing : ICardTransformer
+		{
+
+			public void Transform(WikiCard card)
+			{
+				foreach(var ability in card.Abilities.Values)
+				{
+					if(ability.AbilityType == ArtifactAbilityType.Active)
+					{
+						if (card.CardType == ArtifactCardType.Creep)
+						{
+							ability.AbilityCardParent.CardIcon = "Creep_ability_active_icon.png";
+						}
+					}
+					else if (card.Keywords.ContainsKey(ArtifactKeyword.DeathEffect))
+					{
+						ability.PassiveAbilityType = ArtifactPassiveAbilityType.Death;
+
+						if (card.CardType == ArtifactCardType.Creep)
+						{
+							ability.AbilityCardParent.CardIcon = "Creep_ability_death_icon.png";
+						}
+					}
+					else if (card.Keywords.ContainsKey(ArtifactKeyword.PlayEffect))
+					{
+						ability.PassiveAbilityType = ArtifactPassiveAbilityType.Play;
+						if (card.CardType == ArtifactCardType.Creep)
+						{
+							ability.AbilityCardParent.CardIcon = "Creep_ability_reactive_icon.png";
+						}
+					}
+					else
+					{
+						ability.PassiveAbilityType = ArtifactPassiveAbilityType.Continuous;
+						card.Keywords.Add(ArtifactKeyword.ContinuousEffect, "process of elimination");
+						if (card.CardType == ArtifactCardType.Creep)
+						{
+							ability.AbilityCardParent.CardIcon = "Creep_ability_continuous_icon.png";
+						}
+					}
+
+					if(card.CardType == ArtifactCardType.Item || card.CardType == ArtifactCardType.Improvement)
+					{
+						ability.AbilityCardParent.CardIcon = card.CardIcon;
 					}
 				}
 
@@ -270,10 +324,11 @@ namespace Artificer
 						ability.ParentID = card.ID;
 						ability.Parent = card;
 						ability.Name = ability.Name ?? card.Name;
+						ability.AbilityCardParent = pair.Value.Card;
 						card.Abilities[ability.ID] = ability;
 					}
 
-					if (card.Text.Contains($"ummon a {pair.Value.Card.Name}"))
+					if (Regex.IsMatch(card.Text, $@"ummon \w+ {pair.Value.Card.Name}"))
 					{
 						if (card.CardType == ArtifactCardType.Ability || card.CardType == ArtifactCardType.PassiveAbility)
 						{
@@ -282,12 +337,32 @@ namespace Artificer
 							ability.CardSpawned = pair.Value.Card;
 							ability.CardSpawnedID = pair.Key;
 						}
-						else if(card.CardType == ArtifactCardType.Spell || card.CardType == ArtifactCardType.Improvement)
+						else if (card.CardType == ArtifactCardType.Spell || card.CardType == ArtifactCardType.Improvement)
 						{
 							var spell = card.SubCard as WikiSpell;
 							spell.CardSpawned = pair.Value.Card;
 						}
-						
+
+					}
+				}
+			}
+
+			protected override void TransformSingle(WikiCard card) { }
+		}
+
+		public class CorrectAbilities : CardCollectionTransformer
+		{
+			protected override void TransformChildren(IDictionary<int, WikiCard> cards, WikiCard card)
+			{
+				//Abilities are initialized by taking the references of a card, but this is inaccurate for many cases. 
+				// This finds all non-ability abilities and purges them.
+				foreach (var pair in card.Abilities.ToList())
+				{
+					var abilityCard = cards[pair.Key];
+
+					if (abilityCard.CardType != ArtifactCardType.Ability && abilityCard.CardType != ArtifactCardType.PassiveAbility)
+					{
+						card.Abilities.Remove(pair.Key);
 					}
 				}
 			}

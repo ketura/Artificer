@@ -122,7 +122,7 @@ namespace Artificer
 
 		protected override void CombineSubcardInfobox(WikiArticle parsed, WikiArticle generated, WikiArticle combined)
 		{
-			combined.SubcardInfobox = generated.SubcardInfobox;
+			combined.SubcardInfobox = generated.SubcardInfobox + "\n__TOC__";
 		}
 
 		protected override void CombineCardStinger(WikiArticle parsed, WikiArticle generated, WikiArticle combined)

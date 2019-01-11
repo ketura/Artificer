@@ -80,17 +80,17 @@ namespace Artificer
 			UploadArticleAsync(articleName, content).Wait();
 		}
 
-		
+
 
 		public IEnumerable<WikiPage> DownloadArticles(IEnumerable<string> titles)
 		{
 			List<List<string>> batches = new List<List<string>>();
 			int batchCount = titles.Count() / 50;
-			if(titles.Count() % 50 != 0)
+			if (titles.Count() % 50 != 0)
 			{
 				batchCount++;
 			}
-			for(int i = 1; i <= batchCount; i++)
+			for (int i = 1; i <= batchCount; i++)
 			{
 				int start = (i - 1) * 50;
 				batches.Add(new List<string>(titles.Skip(start).Take(50)));
@@ -98,14 +98,40 @@ namespace Artificer
 
 			List<WikiPage> result = new List<WikiPage>();
 
-			foreach(var batch in batches)
+			foreach (var batch in batches)
 			{
 				var task = GetPagesAsync(batch);
 				task.Wait();
 				result.AddRange(task.Result);
 			}
 
-			return result;			
+			return result;
+		}
+
+		public IEnumerable<ValueTuple<string, string>> PurgeArticles(IEnumerable<string> titles)
+		{
+			List<List<string>> batches = new List<List<string>>();
+			int batchCount = titles.Count() / 50;
+			if (titles.Count() % 50 != 0)
+			{
+				batchCount++;
+			}
+			for (int i = 1; i <= batchCount; i++)
+			{
+				int start = (i - 1) * 50;
+				batches.Add(new List<string>(titles.Skip(start).Take(50)));
+			}
+
+			List<ValueTuple<string, string>> result = new List<ValueTuple<string, string>>();
+
+			foreach (var batch in batches)
+			{
+				var task = PurgePagesAsync(batch);
+				task.Wait();
+				result.AddRange(task.Result);
+			}
+
+			return result;
 		}
 
 		private async Task ConnectAsync()
@@ -159,6 +185,19 @@ namespace Artificer
 			await pages.RefreshAsync(PageQueryOptions.FetchContent | PageQueryOptions.ResolveRedirects);
 			return pages;
 		}
+
+		private async Task<IEnumerable<ValueTuple<string, string>>> PurgePagesAsync(IEnumerable<string> titles)
+		{
+			if (Client == null)
+				throw new InvalidOperationException("Wiki client has not been initialized!  Call Initialize() first.");
+
+			var pages = titles.Select(title => new WikiPage(Site, title)).ToArray();
+
+			var result = await pages.PurgeAsync();
+			return result.Select(x => new ValueTuple<string, string>(x.Page.Title, x.InvalidReason));
+		}
+
+
 
 		private async Task UploadFileAsync(string filename, string localName)
 		{
@@ -257,19 +296,29 @@ namespace Artificer
 		{
 			Console.Write($"Uploading article to {articleName}...");
 
-			try
+			bool finished = false;
+			do
 			{
-				var page = new WikiPage(Site, articleName);
-				await page.RefreshAsync(PageQueryOptions.FetchContent);
-				page.Content = content;
-				await page.UpdateContentAsync("Artificer mass editing card articles to bring cargo definitions into line and introduce consistency to layout.", false, true);
-				Console.WriteLine("Done.");
-			}
-			catch(Exception ex)
-			{
-				Console.WriteLine("Error while uploading!");
-				Console.WriteLine(ex.ToString());
-			}
+				try
+				{
+					var page = new WikiPage(Site, articleName);
+					await page.RefreshAsync(PageQueryOptions.FetchContent);
+					page.Content = content;
+					await page.UpdateContentAsync("Artificer mass editing card articles to bring cargo definitions into line and introduce consistency to layout.", false, true);
+					Console.WriteLine("Done.");
+					finished = true;
+				}
+				catch(System.Net.Http.HttpRequestException ex)
+				{
+					Console.Write("\nUpload failed for no reason, retrying...");
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine("Error while uploading!");
+					Console.WriteLine(ex.ToString());
+					finished = true;
+				}
+			} while (!finished);
 		}
 
 

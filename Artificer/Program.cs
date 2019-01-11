@@ -86,6 +86,10 @@ namespace Artificer
 							artificer.RevertArticles();
 							break;
 
+						case "purge":
+							artificer.PurgeCardArticles();
+							break;
+
 
 						case "exit":
 							exit = true;
@@ -118,6 +122,7 @@ namespace Artificer
 						Console.WriteLine("  upload_audio - push all extracted game voiceover files to the configured wiki.");
 						Console.WriteLine("  update - push or update all card articles (as configured) to the wiki as needed.");
 						Console.WriteLine("  revert - revert all Artificer edits to the configured articles.");
+						Console.WriteLine("  purge - update the cache for all card pages across the wiki.");
 						Console.WriteLine(" ");
 						Console.WriteLine(" exit - exit\n");
 						command = Console.ReadLine().ToLower();

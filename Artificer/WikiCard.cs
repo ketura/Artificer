@@ -73,6 +73,7 @@ namespace Artificer
 		public int BaseID { get; set; }
 		public int MarketplaceID { get; set; }
 		public string Name { get; set; }
+		public List<string> Aliases { get; set; }
 		public int SetID { get; set; }
 
 		[JsonConverter(typeof(StringEnumConverter))]
@@ -135,6 +136,12 @@ namespace Artificer
 			SubType = card.sub_type;
 			Rarity = card.rarity;
 
+			Aliases = new List<string>() { this.Name };
+			if(Regex.IsMatch(Name, @"[^ \w]"))
+			{
+				Aliases.Add(Regex.Replace(Name, @"[^ \w]", ""));
+			}
+
 			if (card.is_black)
 				Color = ArtifactColor.Black;
 			else if (card.is_blue)
@@ -153,8 +160,8 @@ namespace Artificer
 			TextAPI = card.card_text.GetValueOrDefault("english");
 			CardImage = GetImageName(this, "card");
 			CardImageRaw = GetImageName(this, "cardraw");
-			CardIcon = GetImageName(this, "iconborder");
-			CardIconRaw = GetImageName(this, "icon");
+			CardIconRaw = GetImageName(this, "iconborder");
+			CardIcon = GetImageName(this, "icon");
 			Illustrator = card.illustrator;
 
 			foreach(var reference in card.references)
@@ -242,6 +249,7 @@ namespace Artificer
 		//CardID in the db
 		public int ParentID { get; set; }
 		public WikiCard Parent { get; set; }
+		public WikiCard AbilityCardParent { get; set; }
 		public int CardSpawnedID { get; set; }
 		public WikiCard CardSpawned { get; set; }
 		[JsonConverter(typeof(StringEnumConverter))]

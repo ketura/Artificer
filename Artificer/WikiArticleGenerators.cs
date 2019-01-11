@@ -42,12 +42,13 @@ namespace Artificer
 | BaseID = {card.BaseID}
 | MarketplaceID = {card.MarketplaceID}
 | Name = {card.Name}
-| Aliases = 
+| Aliases = {String.Join(",", card.Aliases)}
 | SetID = {card.SetID}
 | CardType = {card.CardType}
 | SubType = {card.SubType}
 | Rarity = {card.Rarity}
 | Color = {card.Color}
+| Abilities = {(card.Abilities.Count > 0 ? String.Join(",", card.Abilities.Select(x => x.Value.ID)) : "")}
 | TokenOf = {(card.TokenParents.Count > 0 ? String.Join(",", card.TokenParents.Select(x => x.ID)) : "")}
 | SignatureOf = {(card.SignatureOf.HasValue ? card.SignatureOf.ToString() : "")}
 | IsCollectable = {card.IsCollectable}
@@ -144,11 +145,14 @@ namespace Artificer
 | ID = {ability.ID}
 | Name = {ability.Name}
 | CardID = {ability.ParentID}
+| CardSpawned = {ability.CardSpawnedID}
 | AbilityType = {ability.AbilityType}
+| PassiveAbilityType = {ability.PassiveAbilityType.ToString()}
+| Charges = {ability.Charges}
+| Cooldown = {ability.Cooldown}
 | Text = {ability.Text}
 | TextFormatted = {ability.TextFormatted}
-| Charges = {ability.Charges}
-| Cooldown = {ability.Cooldown}}}}}
+| AbilityIcon = {ability.AbilityCardParent.CardIcon}}}}}
 ";
 			}
 			return result;
@@ -184,11 +188,11 @@ namespace Artificer
 				if(parent.CardType == ArtifactCardType.Ability || parent.CardType == ArtifactCardType.PassiveAbility)
 				{
 					var ability = parent.SubCard as WikiAbility;
-					result += $"* {{{{{TemplateAbbr[ability.Parent.CardType]}|{ability.Parent.Name}}}}}\n";
+					result += $"{{{{CardImage|{ability.Parent.Name}|220}}}}";
 				}
 				else
 				{
-					result += $"* {{{{{TemplateAbbr[parent.CardType]}|{parent.Name}}}}}\n";
+					result += $"{{{{CardImage|{parent.Name}|220}}}}";
 				}
 			}
 
@@ -202,7 +206,7 @@ namespace Artificer
 
 		public static string GetCardReference(WikiCard card)
 		{
-			return $"{{{{Card/{card.CardType}|{card.Name}}}}}";
+			return $"{{{{CardImage|{card.Name}|220}}}}";
 		}
 	}
 
@@ -245,7 +249,7 @@ namespace Artificer
 	{
 		protected static string GetEmptyResponseArticle(WikiCard card)
 		{
-			return $"{GetTabTemplate(card.CardType)}\n''Card has no responses.''\n[Category:Responses] [Category:No Responses]";
+			return $"{GetTabTemplate(card.CardType)}\n''Card has no responses.''\n[[Category:Responses]] [[Category:No Responses]]";
 		}
 		protected override void AddTabTemplate(WikiArticle article)
 		{
@@ -315,7 +319,6 @@ namespace Artificer
 | Armor = {SubCard.Armor}
 | Health = {SubCard.Health}
 | SignatureCardID = {SubCard.SignatureCardID}
-| Abilities = {String.Join(",", Card.Abilities.Keys.Select(x => x.ToString()))}
 | HeroIcon = {SubCard.HeroIcon}
 | HeroIconRaw = {SubCard.HeroIconRaw}}}}}";
 		}
@@ -384,8 +387,7 @@ namespace Artificer
 | ManaCost = {SubCard.ManaCost}
 | Attack = {SubCard.Attack}
 | Armor = {SubCard.Armor}
-| Health = {SubCard.Health}
-| Abilities = {String.Join(",", Card.Abilities.Keys.Select(x => x.ToString()))}}}}}";
+| Health = {SubCard.Health}}}}}";
 		}
 
 		protected override void AddCardStinger(WikiArticle article)
@@ -461,9 +463,15 @@ namespace Artificer
 			{
 				article.AddSection("Card Text", Card.TextFormatted);
 			}
-			if (SubCard.CardSpawned != null)
+			if (Card.Abilities.Count > 0)
 			{
-				article.AddSection("Card Summoned", GetCardReference(SubCard.CardSpawned));
+				article.AddSection("Ability", GetAbilityInfoboxes(Card.Abilities.Values));
+
+				if (Card.Abilities.Any(x => x.Value.CardSpawned != null))
+				{
+					var cardSpawned = Card.Abilities.Where(x => x.Value.CardSpawned != null).Select(x => x.Value.CardSpawned).First();
+					article.AddSection("Card Summoned", GetCardReference(cardSpawned));
+				}
 			}
 			article.AddSection("Miscellaneous", GetIllustrator(Card));
 		}
@@ -550,8 +558,7 @@ namespace Artificer
 			article.SubcardInfobox += $@"{{{{Item Infobox
 | ID = {Card.ID}
 | Name = {Card.Name}
-| GoldCost = {SubCard.GoldCost}
-| Abilities = {String.Join(",", Card.Abilities.Keys.Select(x => x.ToString()))}}}}}";
+| GoldCost = {SubCard.GoldCost}}}}}";
 		}
 
 		protected override void AddCardStinger(WikiArticle article)

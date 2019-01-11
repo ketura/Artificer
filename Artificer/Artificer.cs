@@ -126,6 +126,8 @@ namespace Artificer
 
 		private bool FilterCard(WikiCard card)
 		{
+			if (card.CardType == ArtifactCardType.Ability || card.CardType == ArtifactCardType.PassiveAbility)
+				return true;
 			if (!_config.SetWhitelist.Contains(card.SetID))
 				return true;
 			if (_config.ArticleUploadWhitelist.Count > 0 && !_config.ArticleUploadWhitelist.Contains(card.Name))
@@ -872,8 +874,10 @@ namespace Artificer
 				//bot.UploadFile(Path.Combine(APIImageLocation, "jpg/icons/default/", card.CardIcon), card.CardIcon);
 				//Raw Background Image
 				bot.UploadFile(Path.Combine(GameImageLocation, $"jpg/panorama/images/card_art/set{card.SetID.ToString("00")}/full_art", $"{card.ID}_psd.jpg"), card.CardImageRaw);
+
 				//Unfiltered Card Icon
-				bot.UploadFile(Path.Combine(GameImageLocation, $"jpg/panorama/images/card_art/set{card.SetID.ToString("00")}/mini_icons", $"{card.ID}_psd.jpg"), card.CardIconRaw);
+				bot.UploadFile(Path.Combine(GameImageLocation, $"jpg/panorama/images/card_art/set{card.SetID.ToString("00")}/mini_icons", $"{card.ID}_psd.jpg"), card.CardIcon);
+
 
 				if (card.CardType == ArtifactCardType.Hero)
 				{
@@ -882,7 +886,24 @@ namespace Artificer
 					//bot.UploadFile(Path.Combine(APIImageLocation, "png/hero_icons/default/", hero.HeroIcon), hero.HeroIcon);
 					//Raw Pixel Art Hero Icon
 					bot.UploadFile(Path.Combine(GameImageLocation, $"png/panorama/images/card_art/set{card.SetID.ToString("00")}/hero_icons", $"{card.ID}_png.png"), hero.HeroIconRaw);
+
+					foreach (var pair in card.Abilities)
+					{
+						var ability = pair.Value;
+						//Unfiltered Card Icon
+						bot.UploadFile(Path.Combine(GameImageLocation, $"jpg/panorama/images/card_art/set{card.SetID.ToString("00")}/mini_icons", $"{ability.ID}_psd.jpg"), ability.AbilityCardParent.CardIcon);
+					}
 				}
+				else if(card.CardType != ArtifactCardType.Creep) //creeps have one of four hard coded ability icons
+				{
+					foreach (var pair in card.Abilities)
+					{
+						var ability = pair.Value;
+						//Unfiltered Card Icon
+						bot.UploadFile(Path.Combine(GameImageLocation, $"jpg/panorama/images/card_art/set{card.SetID.ToString("00")}/mini_icons", $"{ability.Parent.ID}_psd.jpg"), card.CardIcon);
+					}
+				}
+
 			}
 
 			bot.End();
@@ -912,6 +933,35 @@ namespace Artificer
 					bot.UploadFile(Path.Combine(GameAudioLocation, $"sounds/responses/set_{card.SetID.ToString("00")}/{audioName}/{audioName}_{file.Key}.mp3"), file.Value);
 				}
 			}
+
+			bot.End();
+		}
+
+		public void PurgeCardArticles()
+		{
+			PurgeCardArticles(_config.WikiURL, _config.WikiUsername, _config.WikiPassword);
+		}
+
+		public void PurgeCardArticles(string wikiurl, string wikiuser, string wikipass)
+		{
+			AssertGameFileInfo();
+
+			ArtifactWikiBot bot = new ArtifactWikiBot(wikiurl, wikiuser, wikipass);
+			bot.Initialize();
+
+			var titles = ValidCards.Select(x => x.Name);
+			var failures = bot.PurgeArticles(titles);
+
+			if(failures.Count() > 0)
+			{
+				Console.WriteLine("\n\nThe following pages could not be purged:\n\n");
+			}
+
+			foreach(var (page, reason) in failures)
+			{
+				Console.WriteLine($"{page}: {reason}");
+			}
+
 
 			bot.End();
 		}
@@ -1005,8 +1055,8 @@ namespace Artificer
 
 			foreach (var card in ValidCards)
 			{
-				string baseStrategyPage = $"{SharedArticleFunctions.GetTabTemplate(card.CardType)}\n{{{{Stub}}}}\n''Card has not yet had any strategy information written for it.''\n\n[[Category:Strategy]] [[Category:No Strategy]]";
-				string baseChangelogPage = $"{SharedArticleFunctions.GetTabTemplate(card.CardType)}\n{{{{Stub}}}}\n''Card has not yet had any changelog information entered.''\n\n[[Category:Changelog]] [[Category:No Changelog]]";
+				string baseStrategyPage = $"{SharedArticleFunctions.GetTabTemplate(card.CardType)}\n{{{{Stub}}}}\n''This card has not yet had any strategy information written for it.''\n\n[[Category:Strategy]] [[Category:No Strategy]]";
+				string baseChangelogPage = $"{SharedArticleFunctions.GetTabTemplate(card.CardType)}\n{{{{Stub}}}}\n''This card has not yet had any changelog information entered.''\n\n[[Category:Changelog]] [[Category:No Changelog]]";
 				GenerateArticle(card, Path.Combine(basepath, card.Name), baseStrategyPage, baseChangelogPage);				
 			}
 		}

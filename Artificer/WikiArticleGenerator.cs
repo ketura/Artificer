@@ -51,7 +51,9 @@ namespace Artificer
 {CardInfobox}
 {SubcardInfobox}
 
+
 {CardStinger}
+
 
 {GenerateSections(Sections)}
 
