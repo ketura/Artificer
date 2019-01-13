@@ -80,6 +80,33 @@ namespace Artificer
 			UploadArticleAsync(articleName, content).Wait();
 		}
 
+		public void UploadArticles(Dictionary<string, string> articles)
+		{
+			UploadArticleBatchesAsync(articles).Wait();
+		}
+
+		private static readonly int BatchSize = 5;
+
+		private async Task UploadArticleBatchesAsync(Dictionary<string, string> articles)
+		{
+			List<Dictionary<string, string>> batches = new List<Dictionary<string, string>>();
+			int batchCount = articles.Count() / BatchSize;
+			if (articles.Count() % BatchSize != 0)
+			{
+				batchCount++;
+			}
+			for (int i = 1; i <= batchCount; i++)
+			{
+				int start = (i - 1) * BatchSize;
+				batches.Add(new Dictionary<string, string>(articles.Skip(start).Take(BatchSize)));
+			}
+
+			foreach (var batch in batches)
+			{
+				await UploadArticlesAsync(batch);
+			}
+		}
+
 
 
 		public IEnumerable<WikiPage> DownloadArticles(IEnumerable<string> titles)
@@ -292,35 +319,45 @@ namespace Artificer
 			}
 		}
 
+		private async Task UploadArticlesAsync(Dictionary<string, string> articles)
+		{
+			string articleNames = String.Join(",", articles.Keys);
+			Console.WriteLine($"Uploading articles: {articleNames}");
+
+			var tasks = articles.Select(x => UploadArticleAsync(x.Key, x.Value));
+
+			await Task.WhenAll(tasks);
+		}
+
 		private async Task UploadArticleAsync(string articleName, string content)
 		{
-			Console.Write($"Uploading article to {articleName}...");
+			Console.WriteLine($"\tUploading article to {articleName}...");
 
 			bool finished = false;
+			var page = new WikiPage(Site, articleName)
+			{
+				Content = content
+			};
+
 			do
 			{
 				try
 				{
-					var page = new WikiPage(Site, articleName);
-					await page.RefreshAsync(PageQueryOptions.FetchContent);
-					page.Content = content;
 					await page.UpdateContentAsync("Artificer mass editing card articles to bring cargo definitions into line and introduce consistency to layout.", false, true);
-					Console.WriteLine("Done.");
+					Console.WriteLine($"\t{articleName} complete.");
 					finished = true;
 				}
 				catch(System.Net.Http.HttpRequestException ex)
 				{
-					Console.Write("\nUpload failed for no reason, retrying...");
+					Console.WriteLine($"\tUpload for {articleName} failed for no reason, retrying...");
 				}
 				catch (Exception ex)
 				{
-					Console.WriteLine("Error while uploading!");
+					Console.WriteLine($"\tError while uploading {articleName}!");
 					Console.WriteLine(ex.ToString());
 					finished = true;
 				}
 			} while (!finished);
 		}
-
-
 	}
 }

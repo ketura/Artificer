@@ -894,6 +894,15 @@ namespace Artificer
 						bot.UploadFile(Path.Combine(GameImageLocation, $"jpg/panorama/images/card_art/set{card.SetID.ToString("00")}/mini_icons", $"{ability.ID}_psd.jpg"), ability.AbilityCardParent.CardIcon);
 					}
 				}
+				else if (card.CardType == ArtifactCardType.Improvement)
+				{
+					foreach (var pair in card.Abilities)
+					{
+						var ability = pair.Value;
+						//Unfiltered Card Icon
+						bot.UploadFile(Path.Combine(GameImageLocation, $"jpg/panorama/images/card_art/set{card.SetID.ToString("00")}/mini_icons", $"{ability.Parent.ID}_psd.jpg"), card.CardIcon);
+					}
+				}
 				else if(card.CardType != ArtifactCardType.Creep) //creeps have one of four hard coded ability icons
 				{
 					foreach (var pair in card.Abilities)
@@ -1239,8 +1248,7 @@ namespace Artificer
 		{
 			AssertGameFileInfo();
 
-			ArtifactWikiBot bot = new ArtifactWikiBot(wikiurl, wikiuser, wikipass);
-			bot.Initialize();
+			Dictionary<string, string> articles = new Dictionary<string, string>();
 
 			foreach (var card in Cards.Values)
 			{
@@ -1263,34 +1271,37 @@ namespace Artificer
 				if (File.Exists(cardArticlePath))
 				{
 					string article = File.ReadAllText(cardArticlePath);
-					bot.UploadArticle(cardArticle, article);
+					articles[cardArticle] = article;
 				}
 
 				if (File.Exists(loreArticlePath))
 				{
 					string article = File.ReadAllText(loreArticlePath);
-					bot.UploadArticle(loreArticle, article);
+					articles[loreArticle] = article;
 				}
 
 				if (File.Exists(audioArticlePath))
 				{
 					string article = File.ReadAllText(audioArticlePath);
-					bot.UploadArticle(audioArticle, article);
+					articles[audioArticle] = article;
 				}
 
 				if (File.Exists(strategyArticlePath))
 				{
 					string article = File.ReadAllText(strategyArticlePath);
-					bot.UploadArticle(strategyArticle, article);
+					articles[strategyArticle] = article;
 				}
 
 				if (File.Exists(changeArticlePath))
 				{
 					string article = File.ReadAllText(changeArticlePath);
-					bot.UploadArticle(changeArticle, article);
+					articles[changeArticle] = article;
 				}
 			}
 
+			ArtifactWikiBot bot = new ArtifactWikiBot(wikiurl, wikiuser, wikipass);
+			bot.Initialize();
+			bot.UploadArticles(articles);
 			bot.End();
 		}
 
