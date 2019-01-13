@@ -67,13 +67,47 @@ namespace Artificer
 
 	public enum ArtifactKeyword
 	{
+		//Timing
+		DeploymentPhase, //each round
 		BeforeActionPhase,
 		AfterCombatPhase,
+		ThisRound, //end of its next combat phase
+		OtherDeath, //dies
+
+		//Locations
 		Fountain,
-		ModifyAlly,
-		ModifyEnemy,
+		AnyLane, //choose a lane
+		ThisLane,
+		OtherLane, //other lanes, another lane
+		AllLanes,
+		EmptyPosition, //empty combat position, empty position
+
+		//Unit target types
 		AlliedNeighbors,
 		EnemyNeighbors,
+		AlliedTower, //your tower
+		EnemyTower,
+		AllTowers,
+		Improvements,
+		MeleeCreeps,
+		AlliedCreeps,
+		EnemyCreeps,
+		AlliedHeroes, //allied X hero, allied hero
+		EnemyHeroes, //enemy hero
+		BlackHeroes,
+		BlueHeroes,
+		GreenHeroes,
+		RedHeroes,
+		AnyHero, //a hero, a X hero
+		AllHeroes, //all \w+ heroes
+		AlliedUnits, //another ally, to allies, other allies, give allies, each ally, an ally, modify allies, random ally
+		EnemyUnits, //each enemy, two enemies, random enemy
+		AnyUnit, //a unit, another unit
+		AllUnits,
+		Items, //not "non-item"
+
+
+		//Actions
 		Purge,
 		Taunt,
 		Disarm,
@@ -82,34 +116,54 @@ namespace Artificer
 		Lock,
 		Condemn,
 		Summon,
-		Mana,
+		DirectDamage,
+		Heal,
+		ChangeTarget, //combat target
+		Move, //Swap
+		Battle,
+		Modify,
+		Discard,
+		Draw,
+
+		//Attribute types
+		PlusMana, //+\d mana, restore .* mana
+		MinusMana, //-\d mana
 		Bounty,
 		Gold,
 		Siege,
 		Cleave,
 		Retaliate,
-		Attack,
-		Armor,
-		Health,
+		PlusAttack, //+X
+		MinusAttack, //-X
+		PlusArmor, //+X
+		MinusArmor, //-X
+		PlusHealth,
+		MinusHealth,
 		Regeneration,
 		DeathShield,
 		DamageImmunity,
 		Pierce,
 		PiercingDamage,
-		Damage,
-		Heal,
+		RapidDeployment,
 		Soulbound,
+
+		//Mechanics
+		Pulse,
+		Initiative,
+		Quicken,
+		RandomChance, //random, chance, not "the random"
+
+		//Passive types
+		DeathEffect,
+		PlayEffect,
+		ContinuousEffect,
+		ReactiveEffect,
+
+		//Unused?
 		LethalToCreep,
 		LethalToHero,
 		Hacks,
 		Reveal,
-		Pulse,
-		GainsInitiative,
-		RapidDeployment,
-		DeathEffect,
-		PlayEffect,
-		ContinuousEffect,
-		ReactiveEffect
 	}
 
 }

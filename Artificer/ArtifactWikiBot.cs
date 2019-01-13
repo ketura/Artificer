@@ -101,9 +101,15 @@ namespace Artificer
 				batches.Add(new Dictionary<string, string>(articles.Skip(start).Take(BatchSize)));
 			}
 
+			int all = batches.Count;
+			int total = 0;
+
 			foreach (var batch in batches)
 			{
 				await UploadArticlesAsync(batch);
+
+				total++;
+				Console.WriteLine($"{total} of {all} batches complete.");
 			}
 		}
 

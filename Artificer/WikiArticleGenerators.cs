@@ -52,9 +52,9 @@ namespace Artificer
 | TokenOf = {(card.TokenParents.Count > 0 ? String.Join(",", card.TokenParents.Select(x => x.ID)) : "")}
 | SignatureOf = {(card.SignatureOf.HasValue ? card.SignatureOf.ToString() : "")}
 | IsCollectable = {card.IsCollectable}
-| Text = {card.Text}
+| Text = {(String.IsNullOrWhiteSpace(card.Text) ? String.Join("\n", card?.Abilities.Select(x => x.Value.Text)) : card.Text)}
 | TextRaw = {card.TextRaw}
-| TextFormatted = {card.TextFormatted}
+| TextFormatted = {(String.IsNullOrWhiteSpace(card.TextFormatted) ? String.Join("\n", card?.Abilities.Select(x => x.Value.TextFormatted)) : card.TextFormatted)}
 | CardImage = {card.CardImage}
 | CardImageRaw = {card.CardImageRaw}
 | CardIcon = {card.CardIcon}
@@ -188,11 +188,11 @@ namespace Artificer
 				if(parent.CardType == ArtifactCardType.Ability || parent.CardType == ArtifactCardType.PassiveAbility)
 				{
 					var ability = parent.SubCard as WikiAbility;
-					result += $"{{{{CardImage|{ability.Parent.Name}|220}}}}";
+					result += GetCardReference(ability.Parent.Name);
 				}
 				else
 				{
-					result += $"{{{{CardImage|{parent.Name}|220}}}}";
+					result += GetCardReference(parent.Name);
 				}
 			}
 
@@ -206,7 +206,12 @@ namespace Artificer
 
 		public static string GetCardReference(WikiCard card)
 		{
-			return $"{{{{CardImage|{card.Name}|220}}}}";
+			return GetCardReference(card.Name);
+		}
+
+		public static string GetCardReference(string name)
+		{
+			return $"{{{{CardImage|{Regex.Replace(name, @"[\w]+", "")}|220}}}}";
 		}
 	}
 

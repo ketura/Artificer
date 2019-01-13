@@ -33,49 +33,103 @@ namespace Artificer
 		{
 			protected Dictionary<ArtifactKeyword, List<string>> KeywordTriggers { get; set; } = new Dictionary<ArtifactKeyword, List<string>>()
 			{
-				{ ArtifactKeyword.BeforeActionPhase, new List<string>() { "Before the action phase", "before the action phase" } },
-				{ ArtifactKeyword.AfterCombatPhase, new List<string>() { "After the combat phase", "after the combat phase" } },
-				{ ArtifactKeyword.Fountain, new List<string>() { "the Fountain" } },
-				{ ArtifactKeyword.ModifyAlly, new List<string>() { "Modify allies", "Modify allied", "modify allies", "modify allied" } },
-				{ ArtifactKeyword.ModifyEnemy, new List<string>() { "Modify enemy", "modify enemy" } },
-				{ ArtifactKeyword.AlliedNeighbors, new List<string>() { "Allied neighbors", "allied neighbors" } },
-				{ ArtifactKeyword.EnemyNeighbors, new List<string>() { "Enemy neighbors", "enemy neighbors" } },
-				{ ArtifactKeyword.Purge, new List<string>() { "Purge", "purge" } },
-				{ ArtifactKeyword.Taunt, new List<string>() { "Taunt", "taunt" } },
-				{ ArtifactKeyword.Disarm, new List<string>() { "Disarm", "disarm" } },
-				{ ArtifactKeyword.Stun, new List<string>() { "Stun", "stun" } },
-				{ ArtifactKeyword.Silence, new List<string>() { "Silence", "silence" } },
-				{ ArtifactKeyword.Lock, new List<string>() { "Lock", "lock" } },
-				{ ArtifactKeyword.Condemn, new List<string>() { "Condemn", "condemn" } },
-				{ ArtifactKeyword.Summon, new List<string>() { "Summon", "summon" } },
-				{ ArtifactKeyword.Mana, new List<string>() { "Mana", "mana" } },
-				{ ArtifactKeyword.Bounty, new List<string>() { "Bounty" } },
-				{ ArtifactKeyword.Gold, new List<string>() { "Gold", "gold" } },
-				{ ArtifactKeyword.Siege, new List<string>() { "Siege", "siege" } },
-				{ ArtifactKeyword.Cleave, new List<string>() { "Cleave", "cleave" } },
-				{ ArtifactKeyword.Retaliate, new List<string>() { "Retaliate", "retaliate" } },
-				{ ArtifactKeyword.Attack, new List<string>() { "Attack", "attack" } },
-				{ ArtifactKeyword.Armor, new List<string>() { "Armor", "armor" } },
-				{ ArtifactKeyword.Health, new List<string>() { "Health", "health" } },
-				{ ArtifactKeyword.Regeneration, new List<string>() { "Regeneration" } },
-				{ ArtifactKeyword.DeathShield, new List<string>() { "Death Shield" } },
-				{ ArtifactKeyword.DamageImmunity, new List<string>() { "Damage Immunity" } },
-				{ ArtifactKeyword.Pierce, new List<string>() { "Pierce" } },
-				{ ArtifactKeyword.PiercingDamage, new List<string>() { "Piercing damage", "piercing damage" } },
-				{ ArtifactKeyword.Damage, new List<string>() { "Damage", "damage" } },
-				{ ArtifactKeyword.Heal, new List<string>() { "Heal", "heal" } },
-				{ ArtifactKeyword.Soulbound, new List<string>() { "Soulbound" } },
+				//Timing
+				//DeploymentPhase //each round
+				{ ArtifactKeyword.DeploymentPhase, new List<string>() { "[Dd]eployment [Pp]hase", "[Ee]ach [Rr]ound" } },
+				{ ArtifactKeyword.BeforeActionPhase, new List<string>() { "[Bb]efore the action phase" } },
+				{ ArtifactKeyword.AfterCombatPhase, new List<string>() { "[Aa]fter the combat phase" } },
+				{ ArtifactKeyword.ThisRound, new List<string>() { "[Tt]his [Rr]ound", "end of its next combat phase" } },
+				{ ArtifactKeyword.OtherDeath, new List<string>() { @"\bdies\b" } },
+
+				//Locations
+				{ ArtifactKeyword.Fountain, new List<string>() { "[Tt]he Fountain" } },
+				{ ArtifactKeyword.AnyLane, new List<string>() { "[Aa]ny [Ll]ane", "[Cc]hoose a [Ll]ane" } },
+				{ ArtifactKeyword.ThisLane, new List<string>() { "[Tt]his [Ll]ane" } },
+				{ ArtifactKeyword.OtherLane, new List<string>() { "[Oo]ther [Ll]anes?", "[Aa]nother [Ll]ane" } },
+				{ ArtifactKeyword.AllLanes, new List<string>() { "[Aa]ll [Ll]anes" } },
+				{ ArtifactKeyword.EmptyPosition, new List<string>() { "[Ee]mpty ([Cc]ombat )?[Pp]osition" } },
+
+				//Unit target types
+				{ ArtifactKeyword.AlliedNeighbors, new List<string>() { "[Aa]llied neighbors?" } },
+				{ ArtifactKeyword.EnemyNeighbors, new List<string>() { "[Ee]nemy neighbors?" } },
+				{ ArtifactKeyword.AlliedTower, new List<string>() { "[Aa]llied [Tt]ower", "[Yy]our [Tt]ower" } },
+				{ ArtifactKeyword.EnemyTower, new List<string>() { "[Ee]nemy [Tt]owers?", "[Bb]oth [Tt]owers?" } },
+				{ ArtifactKeyword.AllTowers, new List<string>() { "[Aa]ll [Tt]ower" } },
+				{ ArtifactKeyword.Improvements, new List<string>() { "[Ii]mprovements?" } },
+				{ ArtifactKeyword.MeleeCreeps, new List<string>() { "[Mm]elee [Cc]reeps?" } },
+				{ ArtifactKeyword.AlliedCreeps, new List<string>() { "[Aa]llied [Cc]reeps?" } },
+				{ ArtifactKeyword.EnemyCreeps, new List<string>() { "[Ee]nemy [Cc]reeps?" } },
+				{ ArtifactKeyword.AlliedHeroes, new List<string>() { "[Aa]llied [Hh]eroe?s?", "[Aa]llied ([Bb]lack|[Bb]lue|[Gg]reen|[Rr]ed) [Hh]eroe?s?" } },
+				{ ArtifactKeyword.EnemyHeroes, new List<string>() { "[Ee]nemy [Hh]eroe?s?" } },
+				{ ArtifactKeyword.BlackHeroes, new List<string>() { "[Bb]lack [Hh]eroe?s?" } },
+				{ ArtifactKeyword.BlueHeroes, new List<string>() { "[Bb]lue [Hh]eroe?s?" } },
+				{ ArtifactKeyword.GreenHeroes, new List<string>() { "[Gg]reen [Hh]eroe?s?" } },
+				{ ArtifactKeyword.RedHeroes, new List<string>() { "[Rr]ed [Hh]eroe?s?" } },
+				{ ArtifactKeyword.AnyHero, new List<string>() { "[Aa] [Hh]eroe?s?", "[Aa] ([Bb]lack|[Bb]lue|[Gg]reen|[Rr]ed) [Hh]eroe?s?" } },
+				{ ArtifactKeyword.AllHeroes, new List<string>() { "[Aa]ll [Hh]eroe?s?", "[Aa]ll ([Bb]lack|[Bb]lue|[Gg]reen|[Rr]ed) [Hh]eroe?s?" } },
+				{ ArtifactKeyword.AlliedUnits, new List<string>() { "[Aa]llied [Uu]nits?", "[Aa]nother [Aa]lly", "(to )?[Aa]llies", "[Oo]ther [Aa]llies", "[Gg]ive [Aa]llies", "[Ee]ach [Aa]lly", "[Aa]n [Aa]lly", "[Mm]odify [Aa]llies", "[Rr]andom [Aa]lly" } },
+				{ ArtifactKeyword.EnemyUnits, new List<string>() { "[Ee]nemy [Uu]nits?", "[Aa]nother [Ee]nemy [Uu]nits?", "to [Ee]nem(y|ies) [Uu]nits?", "[Oo]ther [Ee]nem(y|ies) [Uu]nits?", "[Gg]ive [Ee]nem(y|ies) [Uu]nits?", "[Ee]ach (other )?[Ee]nem(y|ies)( [Uu]nits?)?", "[Aa]n [Ee]nem(y|ies) [Uu]nits?", "[Mm]odify [Ee]nem(y|ies) [Uu]nits?", "[Rr]andom [Ee]nem(y|ies) [Uu]nits?", "two [Ee]nem(y|ies)" } },
+				{ ArtifactKeyword.AnyUnit, new List<string>() { "[Aa] [Uu]nit", "[Aa]nother [Uu]nit" } },
+				{ ArtifactKeyword.AllUnits, new List<string>() { "[Aa]ll [Uu]nits" } },
+				{ ArtifactKeyword.Items, new List<string>() { "(?<!non-)[Ii]tems?" } },
+
+				//Actions
+				{ ArtifactKeyword.Purge, new List<string>() { "[Pp]urge" } },
+				{ ArtifactKeyword.Taunt, new List<string>() { "[Tt]aunt" } },
+				{ ArtifactKeyword.Disarm, new List<string>() { "[Dd]isarm" } },
+				{ ArtifactKeyword.Stun, new List<string>() { "[Ss]tun" } },
+				{ ArtifactKeyword.Silence, new List<string>() { "[Ss]ilence" } },
+				{ ArtifactKeyword.Lock, new List<string>() { @"\b[Ll]ock\b" } },
+				{ ArtifactKeyword.Condemn, new List<string>() { "[Cc]ondemn" } },
+				{ ArtifactKeyword.Summon, new List<string>() { "[Ss]ummon" } },
+				{ ArtifactKeyword.DirectDamage, new List<string>() { @"\d ([Pp]iercing)? damage", @"[Dd]eal (\d+ )?damage" } },
+				{ ArtifactKeyword.Heal, new List<string>() { @"\b[Hh]eal\b" } },
+				{ ArtifactKeyword.ChangeTarget, new List<string>() { "[Cc]hange [Tt]arget", "[Cc]ombat [Tt]arget" } },
+				{ ArtifactKeyword.Move, new List<string>() { @"\b[Mm]ove\b", @"[Ss]wap\b" } },
+				{ ArtifactKeyword.Battle, new List<string>() { "[Tt]hey [Bb]attle", "[Ii]t [Bb]attle" } },
+				{ ArtifactKeyword.Modify, new List<string>() { "[Mm]odify", "[Mm]odifies" } },
+				{ ArtifactKeyword.Discard, new List<string>() { "[Dd]iscard" } },
+				{ ArtifactKeyword.Draw, new List<string>() { @"\b[Dd]raw\b" } },
+
+				//Attribute types
+				{ ArtifactKeyword.PlusMana, new List<string>() { @"\+\d+ [Mm]ana", @"\+X [Mm]ana", @"restore \w+? [Mm]ana" } },
+				{ ArtifactKeyword.MinusMana, new List<string>() { @"-\d+ [Mm]ana", @"-X [Mm]ana" } },
+				{ ArtifactKeyword.Bounty, new List<string>() { "[Bb]ounty" } },
+				{ ArtifactKeyword.Gold, new List<string>() { "[Gg]old" } },
+				{ ArtifactKeyword.Siege, new List<string>() { "[Ss]iege" } },
+				{ ArtifactKeyword.Cleave, new List<string>() { @"[Cc]leave\b" } },
+				{ ArtifactKeyword.Retaliate, new List<string>() { "[Rr]etaliate" } },
+				{ ArtifactKeyword.PlusAttack, new List<string>() { @"\+\d+ [Aa]ttack\b", @"\+X [Aa]ttack\b" } },
+				{ ArtifactKeyword.MinusAttack, new List<string>() { @"-\d+ [Aa]ttack\b", @"-X [Aa]ttack\b" } },
+				{ ArtifactKeyword.PlusArmor, new List<string>() { @"\+\d+ [Aa]rmor", @"\+X [Aa]rmor" } },
+				{ ArtifactKeyword.MinusArmor, new List<string>() { @"-\d+ [Aa]rmor", @"-X [Aa]rmor" } },
+				{ ArtifactKeyword.PlusHealth, new List<string>() { @"\+\d+ [Hh]ealth", @"\+X [Hh]ealth" } },
+				{ ArtifactKeyword.MinusHealth, new List<string>() { @"-\d+ [Hh]ealth", @"-X [Hh]ealth" } },
+				{ ArtifactKeyword.Regeneration, new List<string>() { "[Rr]egeneration" } },
+				{ ArtifactKeyword.DeathShield, new List<string>() { "[Dd]eath [Ss]hield" } },
+				{ ArtifactKeyword.DamageImmunity, new List<string>() { "[Dd]amage [Ii]mmunity" } },
+				{ ArtifactKeyword.Pierce, new List<string>() { "[Pp]ierce" } },
+				{ ArtifactKeyword.PiercingDamage, new List<string>() { "[Pp]iercing damage" } },
+				{ ArtifactKeyword.RapidDeployment, new List<string>() { "[Rr]apid [Dd]eployment" } },
+				{ ArtifactKeyword.Soulbound, new List<string>() { "[Ss]oulbound" } },
+
+				//Mechanics
+				{ ArtifactKeyword.Pulse, new List<string>() { "[Pp]ulse" } },
+				{ ArtifactKeyword.Initiative, new List<string>() { "[Gg]et [Ii]nitiative" } },
+				{ ArtifactKeyword.Quicken, new List<string>() { "[Qq]uicken" } },
+				{ ArtifactKeyword.RandomChance, new List<string>() { "(?<!the )[Rr]andom", "[Cc]hance" } },
+
+				//Passive Types
+				{ ArtifactKeyword.DeathEffect, new List<string>() { "Death Effect:" } },
+				{ ArtifactKeyword.PlayEffect, new List<string>() { "Play Effect:", "Equip Effect:"} },
+				{ ArtifactKeyword.ContinuousEffect, new List<string>() { "" } },
+				{ ArtifactKeyword.ReactiveEffect, new List<string>() { "[aA]fter", "[bB]efore", "[wW]hen(ever)?", @"[Ee]ach \w+ phase"} },
+
+				//Unused?
 				{ ArtifactKeyword.LethalToCreep, new List<string>() { "LethalToCreep" } },
 				{ ArtifactKeyword.LethalToHero, new List<string>() { "LethalToHero" } },
 				{ ArtifactKeyword.Hacks, new List<string>() { "Hacks" } },
 				{ ArtifactKeyword.Reveal, new List<string>() { "Reveal" } },
-				{ ArtifactKeyword.Pulse, new List<string>() { "Pulse" } },
-				{ ArtifactKeyword.GainsInitiative, new List<string>() { "Get initiative", "Get Initiative" } },
-				{ ArtifactKeyword.RapidDeployment, new List<string>() { "Rapid Deployment" } },
-				{ ArtifactKeyword.DeathEffect, new List<string>() { "Death Effect:" } },
-				{ ArtifactKeyword.PlayEffect, new List<string>() { "Play Effect:" } },
-				{ ArtifactKeyword.ContinuousEffect, new List<string>() { "" } },
-				{ ArtifactKeyword.ReactiveEffect, new List<string>() { "after", "Play Effect:" } }
 			};
 
 			public void Transform(WikiCard card)
@@ -123,6 +177,14 @@ namespace Artificer
 						if (card.CardType == ArtifactCardType.Creep)
 						{
 							ability.AbilityCardParent.CardIcon = "Creep_ability_death_icon.png";
+						}
+					}
+					else if (card.Keywords.ContainsKey(ArtifactKeyword.ReactiveEffect))
+					{
+						ability.PassiveAbilityType = ArtifactPassiveAbilityType.Reactive;
+						if (card.CardType == ArtifactCardType.Creep)
+						{
+							ability.AbilityCardParent.CardIcon = "Creep_ability_reactive_icon.png";
 						}
 					}
 					else if (card.Keywords.ContainsKey(ArtifactKeyword.PlayEffect))
@@ -381,6 +443,7 @@ namespace Artificer
 					hero.SignatureCard = sig;
 					sig.SignatureOf = card.ID;
 					sig.SignatureParent = card;
+					sig.Rarity = card.Rarity;
 				}
 			}
 

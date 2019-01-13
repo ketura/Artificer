@@ -525,7 +525,12 @@ namespace Artificer
 
 		public void MergeAPIWithGameFiles()
 		{
-			AssertGameFileInfo();
+			AssertSets();
+			AssertVOMapping();
+			if (GameFileInfo == null)
+			{
+				ParseGameData();
+			}
 
 			foreach (var card in Cards.Values)
 			{

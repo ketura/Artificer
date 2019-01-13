@@ -98,7 +98,8 @@ namespace Artificer
 			gauntlet.AddSetup(new SimpleTextSubstitution(@"]]$", ""));
 			gauntlet.AddSetup(new SimpleTextSubstitution(@"\[\[(.*?)]]", "$1"));
 			gauntlet.AddSetup(new SimpleTextSubstitution(@"<BR/>\\n", "<br/>"));
-			gauntlet.AddSetup(new SimpleTextSubstitution(@"<br/>", "<br/>"));
+			gauntlet.AddSetup(new SimpleTextSubstitution(@"]]<br/>", "<br/>"));
+			gauntlet.AddSetup(new SimpleTextSubstitution(@"\\", ""));
 
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[g:608\[&#9633;]]", "{{Pulse}}"));
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[color:quick\[\[g:604\[&#9634; Get initiative]]", "{{Get initiative}}"));
@@ -109,7 +110,8 @@ namespace Artificer
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\[color:.*?\[(.*?)]]", "$1"));
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"]]$", ""));
 			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"<BR/>\\n", "<br/>"));
-			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"<br/>", "<br/>"));
+			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"]]<br/>", "<br/>"));
+			gauntlet.AddSetup(new SimpleTextWikiSubstitution(@"\\", ""));
 
 			gauntlet.AddMultiple(new CorrectAbilities());
 			gauntlet.AddMultiple(new ResolveReferences());
