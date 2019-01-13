@@ -944,7 +944,11 @@ namespace Artificer
 
 				foreach (var file in card.VoiceOverFiles)
 				{
-					bot.UploadFile(Path.Combine(GameAudioLocation, $"sounds/responses/set_{card.SetID.ToString("00")}/{audioName}/{audioName}_{file.Key}.mp3"), file.Value);
+					int set = card.SetID;
+					if (set == 0)
+						set = 1; // Base set audio files are lumped in with Call to Arms.
+
+					bot.UploadFile(Path.Combine(GameAudioLocation, $"sounds/responses/set_{set.ToString("00")}/{audioName}/{audioName}_{file.Key}.mp3"), file.Value);
 				}
 			}
 
