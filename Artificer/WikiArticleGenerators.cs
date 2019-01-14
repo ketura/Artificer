@@ -211,7 +211,7 @@ namespace Artificer
 
 		public static string GetCardReference(string name)
 		{
-			return $"{{{{CardImage|{Regex.Replace(name, @"[\w]+", "")}|220}}}}";
+			return $"{{{{CardImage|{Regex.Replace(name, @"[^ \w]+", "")}|220}}}}";
 		}
 	}
 

@@ -92,7 +92,7 @@ namespace Artificer
 				{ ArtifactKeyword.Draw, new List<string>() { @"\b[Dd]raw\b" } },
 
 				//Attribute types
-				{ ArtifactKeyword.PlusMana, new List<string>() { @"\+\d+ [Mm]ana", @"\+X [Mm]ana", @"restore \w+? [Mm]ana" } },
+				{ ArtifactKeyword.PlusMana, new List<string>() { @"\+\d+ [Mm]ana", @"\+X [Mm]ana", @"restore your [Tt]ower's [Mm]ana" } },
 				{ ArtifactKeyword.MinusMana, new List<string>() { @"-\d+ [Mm]ana", @"-X [Mm]ana" } },
 				{ ArtifactKeyword.Bounty, new List<string>() { "[Bb]ounty" } },
 				{ ArtifactKeyword.Gold, new List<string>() { "[Gg]old" } },
