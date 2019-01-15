@@ -80,13 +80,20 @@ namespace Artificer
 
 						case "update":
 							artificer.UpdateArticles();
+							artificer.PurgeCardArticles();
 							break;
 
 						case "revert":
 							artificer.RevertArticles();
+							artificer.PurgeCardArticles();
 							break;
 
 						case "purge":
+							artificer.PurgeCardArticles();
+							break;
+
+						case "editpurge":
+							artificer.EditPurgeArticles();
 							artificer.PurgeCardArticles();
 							break;
 
@@ -123,6 +130,7 @@ namespace Artificer
 						Console.WriteLine("  update - push or update all card articles (as configured) to the wiki as needed.");
 						Console.WriteLine("  revert - revert all Artificer edits to the configured articles.");
 						Console.WriteLine("  purge - update the cache for all card pages across the wiki.");
+						Console.WriteLine("  editpurge - perform a no-op edit on all configured cards (for cargo refresh purposes).");
 						Console.WriteLine(" ");
 						Console.WriteLine(" exit - exit\n");
 						command = Console.ReadLine().ToLower();

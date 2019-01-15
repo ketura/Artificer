@@ -1248,6 +1248,23 @@ namespace Artificer
 			bot.End();
 		}
 
+		public void EditPurgeArticles()
+		{
+			EditPurgeArticles(_config.WikiURL, _config.WikiUsername, _config.WikiPassword);
+		}
+
+		public void EditPurgeArticles(string wikiurl, string wikiuser, string wikipass)
+		{
+			AssertGameFileInfo();
+
+			var cards = ValidCards.Where(x => !FilterCard(x)).Select(x => x.Name);
+
+			ArtifactWikiBot bot = new ArtifactWikiBot(wikiurl, wikiuser, wikipass);
+			bot.Initialize();
+			bot.EditPurgeCards(cards);
+			bot.End();
+		}
+
 		public void UpdateArticles()
 		{
 			UpdateArticles(Path.Combine(_config.ArticleLocation, "Combined_Articles"), _config.WikiURL, _config.WikiUsername, _config.WikiPassword);

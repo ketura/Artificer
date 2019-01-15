@@ -167,6 +167,22 @@ namespace Artificer
 			return result;
 		}
 
+		public void EditPurgeCards(IEnumerable<string> titles)
+		{
+			int all = titles.Count();
+			int total = 0;
+
+			foreach (var card in titles)
+			{
+				EditPurgeCardAsync(card).Wait();
+
+				total++;
+				Console.WriteLine($"{total} of {all} batches complete.");
+			}
+		}
+
+		
+
 		private async Task ConnectAsync()
 		{
 			// A WikiClient has its own CookieContainer.
@@ -333,6 +349,46 @@ namespace Artificer
 			var tasks = articles.Select(x => UploadArticleAsync(x.Key, x.Value));
 
 			await Task.WhenAll(tasks);
+		}
+
+		private async Task EditPurgeCardAsync(string card)
+		{
+			Console.WriteLine($"\tEdit Purging card {card}...");
+
+			bool finished = false;
+			var page = new WikiPage(Site, card);
+
+			await page.RefreshAsync(PageQueryOptions.FetchContent);
+
+			if(page.Content.StartsWith("&nbsp;"))
+			{
+				page.Content = page.Content.Remove(0, 6);
+			}
+			else
+			{
+				page.Content = "&nbsp;" + page.Content;
+			}
+			
+
+			do
+			{
+				try
+				{
+					await page.UpdateContentAsync("Artificer performing no-op edit to force Cargo to update tables.", minor: true, bot:true);
+					Console.WriteLine($"\t{card} complete.");
+					finished = true;
+				}
+				catch (System.Net.Http.HttpRequestException ex)
+				{
+					Console.WriteLine($"\tUpload for {card} failed for no reason, retrying...");
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"\tError while uploading {card}!");
+					Console.WriteLine(ex.ToString());
+					finished = true;
+				}
+			} while (!finished);
 		}
 
 		private async Task UploadArticleAsync(string articleName, string content)
