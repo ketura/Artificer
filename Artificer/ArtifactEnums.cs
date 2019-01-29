@@ -37,7 +37,8 @@ namespace Artificer
 		Pathing,
 		Ability,
 		[EnumMember(Value = "Passive Ability")]
-		PassiveAbility
+		PassiveAbility,
+		Mutation
 	}
 
 	public enum ArtifactSubType { None, Consumable, Weapon, Armor, Accessory, Deed }

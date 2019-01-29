@@ -1106,13 +1106,19 @@ namespace Artificer
 			WikiArticleGenerator LoreArticleGenerator = new LoreArticleGenerator(card);
 			WikiArticleGenerator AudioArticleGenerator = new ResponseArticleGenerator(card);
 
-			GeneratedCardArticles[card.Name] = CardArticleGenerator.GenerateArticle();
+			if (card.CardType != ArtifactCardType.Mutation)
+			{
+				GeneratedCardArticles[card.Name] = CardArticleGenerator.GenerateArticle();
+			}
 			GeneratedLoreArticles[card.Name] = LoreArticleGenerator.GenerateArticle();
 			GeneratedAudioArticles[card.Name] = AudioArticleGenerator.GenerateArticle();
 			GeneratedStrategyArticles[card.Name] = stratPage;
 			GeneratedChangelogArticles[card.Name] = changePage;
 
-			File.WriteAllText($"{Path.GetFullPath(basefile)}.txt", CardArticleGenerator.GenerateArticleText(GeneratedCardArticles[card.Name]));
+			if (card.CardType != ArtifactCardType.Mutation)
+			{
+				File.WriteAllText($"{Path.GetFullPath(basefile)}.txt", CardArticleGenerator.GenerateArticleText(GeneratedCardArticles[card.Name]));
+			}
 			File.WriteAllText($"{Path.GetFullPath(basefile)}_Lore.txt", LoreArticleGenerator.GenerateArticleText(GeneratedLoreArticles[card.Name]));
 			File.WriteAllText($"{Path.GetFullPath(basefile)}_Audio.txt", AudioArticleGenerator.GenerateArticleText(GeneratedAudioArticles[card.Name]));
 
@@ -1198,10 +1204,15 @@ namespace Artificer
 
 			foreach(var card in ValidCards)
 			{
-				WikiArticle genCardArticle = GeneratedCardArticles[card.Name];
-				ParsedCardArticles.TryGetValue(card.Name, out WikiArticle parsedCardArticle);
-				OldArticleCombiner cardCombiner = new OldArticleCombiner(card);
-				var cardResult = cardCombiner.CombineArticles(parsedCardArticle, genCardArticle);
+				WikiArticle cardResult = null;
+				if (card.CardType != ArtifactCardType.Mutation)
+				{
+					WikiArticle genCardArticle = GeneratedCardArticles[card.Name];
+
+					ParsedCardArticles.TryGetValue(card.Name, out WikiArticle parsedCardArticle);
+					OldArticleCombiner cardCombiner = new OldArticleCombiner(card);
+					cardResult = cardCombiner.CombineArticles(parsedCardArticle, genCardArticle);
+				}
 
 				WikiArticle genLoreArticle = GeneratedLoreArticles[card.Name];
 				ParsedLoreArticles.TryGetValue(card.Name, out WikiArticle parsedLoreArticle);
@@ -1215,7 +1226,10 @@ namespace Artificer
 
 				var audioResult = GeneratedAudioArticles[card.Name];
 
-				File.WriteAllText(Path.Combine(combinedPath, $"{card.Name}.txt"), cardResult.GenerateNewArticle(card));
+				if (card.CardType != ArtifactCardType.Mutation)
+				{
+					File.WriteAllText(Path.Combine(combinedPath, $"{card.Name}.txt"), cardResult.GenerateNewArticle(card));
+				}
 				File.WriteAllText(Path.Combine(combinedPath, $"{card.Name}_Lore.txt"), loreResult.GenerateNewArticle(card));
 				File.WriteAllText(Path.Combine(combinedPath, $"{card.Name}_Audio.txt"), audioResult.GenerateNewArticle(card));
 

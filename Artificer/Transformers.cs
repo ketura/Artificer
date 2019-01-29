@@ -138,7 +138,7 @@ namespace Artificer
 				{
 					foreach (string trigger in pair.Value)
 					{
-						if (String.IsNullOrWhiteSpace(trigger))
+						if (String.IsNullOrWhiteSpace(trigger) || String.IsNullOrWhiteSpace(card.Text))
 							continue;
 
 						var match = Regex.Match(card.Text, trigger);
@@ -226,6 +226,11 @@ namespace Artificer
 
 			public virtual void Transform(WikiCard card)
 			{
+				if (card.Text == null)
+				{
+					Console.WriteLine($"Card {card.Name} has no text!");
+					return;
+				}
 				card.Text = Regex.Replace(card.Text, RegexString, Replacement);
 			}
 
@@ -308,6 +313,10 @@ namespace Artificer
 		{
 			public override void Transform(WikiCard card)
 			{
+				if (card.TextRaw == null)
+				{
+					return;
+				}
 				if (!Regex.IsMatch(card.Text, RegexString) && !Regex.IsMatch(card.TextFormatted, RegexString))
 					return;
 
@@ -356,7 +365,11 @@ namespace Artificer
 		{
 			public void Transform(WikiCard card)
 			{
-
+				if(card.TextRaw == null)
+				{
+					Console.WriteLine($"Card {card.Name} has no text!");
+					return;
+				}
 				var match = Regex.Match(card.TextRaw, @"\[activatedability\[\[color:ability\[Active &#9632;(\d):]]");
 				if(match.Captures.Count > 0)
 				{
@@ -388,6 +401,11 @@ namespace Artificer
 						ability.Name = ability.Name ?? card.Name;
 						ability.AbilityCardParent = pair.Value.Card;
 						card.Abilities[ability.ID] = ability;
+					}
+
+					if (card.TextRaw == null)
+					{
+						continue;
 					}
 
 					if (Regex.IsMatch(card.Text, $@"ummon \w+ {pair.Value.Card.Name}"))
